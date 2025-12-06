@@ -1,0 +1,18 @@
+<div id="<%= dom_id group %>" class="w-full sm:w-auto my-5 space-y-5">
+  <div>
+    <strong class="block font-medium mb-1">Name:</strong>
+    <%= group.name %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Meeting time:</strong>
+    <%= group.meeting_time %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Meeting location:</strong>
+    <%= group.meeting_location %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Members:</strong>
+    <%= group.members.map(&:full_name).join(", ") %>
+  </div>
+</div>

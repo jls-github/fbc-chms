@@ -1,0 +1,29 @@
+<%= form_with(model: group_member, class: "contents") do |form| %>
+  <% if group_member.errors.any? %>
+    <div id="error_explanation" class="bg-red-50 text-red-500 px-3 py-2 font-medium rounded-md mt-3">
+      <h2><%= pluralize(group_member.errors.count, "error") %> prohibited this group_member from being saved:</h2>
+
+      <ul class="list-disc ml-6">
+        <% group_member.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% members_options = Member.all.map { |m| [(m.try(:full_name) || m.try(:name) || [m.try(:first_name), m.try(:last_name)].compact.join(' ') || "##{m.id}"), m.id] } %>
+  <div class="my-5">
+    <%= form.label :member_id %>
+    <%= form.select :member_id, options_for_select(members_options, group_member.member_id), { include_blank: true }, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": group_member.errors[:member_id].none?, "border-red-400 focus:outline-red-600": group_member.errors[:member_id].any?}] %>
+  </div>
+
+  <% groups_options = Group.all.map { |g| [(g.try(:name) || g.try(:title) || g.to_s || "##{g.id}"), g.id] } %>
+  <div class="my-5">
+    <%= form.label :group_id %>
+    <%= form.select :group_id, options_for_select(groups_options, group_member.group_id), { include_blank: true }, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": group_member.errors[:group_id].none?, "border-red-400 focus:outline-red-600": group_member.errors[:group_id].any?}] %>
+  </div>
+
+  <div class="inline">
+    <%= form.submit class: "w-full sm:w-auto rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white inline-block font-medium cursor-pointer" %>
+  </div>
+<% end %>

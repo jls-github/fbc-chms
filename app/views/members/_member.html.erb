@@ -1,0 +1,38 @@
+<div id="<%= dom_id member %>" class="w-full sm:w-auto my-5 space-y-5">
+  <div>
+    <strong class="block font-medium mb-1">First name:</strong>
+    <%= member.first_name %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Last name:</strong>
+    <%= member.last_name %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Address 1:</strong>
+    <%= member.address_1 %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Address 2:</strong>
+    <%= member.address_2 %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Postal code:</strong>
+    <%= member.postal_code %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Phone:</strong>
+    <%= member.phone %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Email:</strong>
+    <%= member.email %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Groups:</strong>
+    <%= member.groups.map(&:name).join(", ") %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Teams:</strong>
+    <%= member.teams.map(&:name).join(", ") %>
+  </div>
+</div>

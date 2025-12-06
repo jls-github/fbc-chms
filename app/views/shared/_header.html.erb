@@ -1,7 +1,7 @@
 <header class="w-full bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-40">
   <div class="container mx-auto px-5 py-3 flex items-center justify-between">
     <div class="flex items-center space-x-4">
-      <%= link_to "Fbc Chms", root_path, class: "text-xl font-semibold text-gray-900" %>
+      <%= link_to "Fbc Management System", root_path, class: "text-xl font-semibold text-gray-900" %>
       <nav class="hidden sm:flex items-center space-x-3 text-sm text-gray-600">
         <%= link_to "Groups", groups_path, class: "hover:text-gray-900" %>
         <%= link_to "Teams", teams_path, class: "hover:text-gray-900" %>
@@ -10,8 +10,12 @@
     </div>
 
     <div class="flex items-center space-x-3">
-      <%= link_to "New Group", new_group_path, class: "btn-primary" %>
-      <%= link_to "Sign in", new_session_path, class: "btn-secondary" %>
+
+      <% if authenticated? %>
+        <%= button_to "Sign Out", session_path, method: :delete, class: "btn-secondary"  %>
+      <% else %>
+        <%= link_to "Sign In", new_session_path, class: "btn-secondary" %>
+      <% end %>
     </div>
   </div>
 </header>

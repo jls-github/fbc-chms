@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_06_211613) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_06_221206) do
   create_table "group_members", force: :cascade do |t|
     t.integer "member_id", null: false
     t.integer "group_id", null: false
@@ -38,6 +38,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_06_211613) do
     t.string "email"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "city"
+    t.string "state"
   end
 
   create_table "sessions", force: :cascade do |t|

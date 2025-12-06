@@ -32,6 +32,16 @@
   </div>
 
   <div class="my-5">
+    <%= form.label :city %>
+    <%= form.text_field :city, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": member.errors[:city].none?, "border-red-400 focus:outline-red-600": member.errors[:city].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :state %>
+    <%= form.text_field :state, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": member.errors[:state].none?, "border-red-400 focus:outline-red-600": member.errors[:state].any?}] %>
+  </div>
+
+  <div class="my-5">
     <%= form.label :postal_code %>
     <%= form.text_field :postal_code, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": member.errors[:postal_code].none?, "border-red-400 focus:outline-red-600": member.errors[:postal_code].any?}] %>
   </div>

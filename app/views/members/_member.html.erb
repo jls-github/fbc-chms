@@ -4,23 +4,8 @@
 
   <div class="flow-y flex-1 min-h-0">
       <div>
-        <strong class="block font-medium mb-1">First name</strong>
-        <div class="text-sm text-gray-700"><%= member.first_name %></div>
-      </div>
-
-      <div>
-        <strong class="block font-medium mb-1">Last name</strong>
-        <div class="text-sm text-gray-700"><%= member.last_name %></div>
-      </div>
-
-      <div>
         <strong class="block font-medium mb-1">Address</strong>
-        <div class="text-sm text-gray-700"><%= [member.address_1, member.address_2].compact.join(', ') %></div>
-      </div>
-
-      <div>
-        <strong class="block font-medium mb-1">Postal code</strong>
-        <div class="text-sm text-gray-700"><%= member.postal_code %></div>
+        <div class="text-sm text-gray-700"><%= member.full_address %></div>
       </div>
 
       <div>
@@ -35,7 +20,7 @@
 
       <div>
         <strong class="block font-medium mb-1">Groups</strong>
-        <div class="text-sm text-gray-700"><%= !member.groups.empty? member.groups.map(&:name).join(", ") : 'No Groups' %></div>
+        <div class="text-sm text-gray-700"><%= !member.groups.empty? ? member.groups.map(&:name).join(", ") : 'No Groups' %></div>
       </div>
 
       <div>

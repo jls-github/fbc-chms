@@ -1,38 +1,54 @@
-<div id="<%= dom_id member %>" class="w-full sm:w-auto my-5 space-y-5">
-  <div>
-    <strong class="block font-medium mb-1">First name:</strong>
-    <%= member.first_name %>
-  </div>
-  <div>
-    <strong class="block font-medium mb-1">Last name:</strong>
-    <%= member.last_name %>
-  </div>
-  <div>
-    <strong class="block font-medium mb-1">Address 1:</strong>
-    <%= member.address_1 %>
-  </div>
-  <div>
-    <strong class="block font-medium mb-1">Address 2:</strong>
-    <%= member.address_2 %>
-  </div>
-  <div>
-    <strong class="block font-medium mb-1">Postal code:</strong>
-    <%= member.postal_code %>
-  </div>
-  <div>
-    <strong class="block font-medium mb-1">Phone:</strong>
-    <%= member.phone %>
-  </div>
-  <div>
-    <strong class="block font-medium mb-1">Email:</strong>
-    <%= member.email %>
-  </div>
-  <div>
-    <strong class="block font-medium mb-1">Groups:</strong>
-    <%= member.groups.map(&:name).join(", ") %>
-  </div>
-  <div>
-    <strong class="block font-medium mb-1">Teams:</strong>
-    <%= member.teams.map(&:name).join(", ") %>
+<div id="<%= dom_id member %>" class="w-full sm:w-auto my-5">
+  <div class="card flex flex-col h-full">
+    <div class="card-title"><%= member.full_name %></div>
+
+  <div class="flow-y flex-1 min-h-0">
+      <div>
+        <strong class="block font-medium mb-1">First name</strong>
+        <div class="text-sm text-gray-700"><%= member.first_name %></div>
+      </div>
+
+      <div>
+        <strong class="block font-medium mb-1">Last name</strong>
+        <div class="text-sm text-gray-700"><%= member.last_name %></div>
+      </div>
+
+      <div>
+        <strong class="block font-medium mb-1">Address</strong>
+        <div class="text-sm text-gray-700"><%= [member.address_1, member.address_2].compact.join(', ') %></div>
+      </div>
+
+      <div>
+        <strong class="block font-medium mb-1">Postal code</strong>
+        <div class="text-sm text-gray-700"><%= member.postal_code %></div>
+      </div>
+
+      <div>
+        <strong class="block font-medium mb-1">Phone</strong>
+        <div class="text-sm text-gray-700"><%= member.phone %></div>
+      </div>
+
+      <div>
+        <strong class="block font-medium mb-1">Email</strong>
+        <div class="text-sm text-gray-700"><%= member.email %></div>
+      </div>
+
+      <div>
+        <strong class="block font-medium mb-1">Groups</strong>
+        <div class="text-sm text-gray-700"><%= !member.groups.empty? member.groups.map(&:name).join(", ") : 'No Groups' %></div>
+      </div>
+
+      <div>
+        <strong class="block font-medium mb-1">Teams</strong>
+        <div class="text-sm text-gray-700"><%= !member.teams.empty? ? member.teams.map(&:name).join(", ") : 'No Teams' %></div>
+      </div>
+    </div>
+    <% if local_assigns[:show_actions] %>
+      <div class="mt-4 flex flex-wrap items-center space-x-2">
+        <%= link_to "Show", member, class: "text-sm rounded-md px-3 py-1 bg-gray-100 hover:bg-gray-50 font-medium" %>
+        <%= link_to "Edit", edit_member_path(member), class: "text-sm rounded-md px-3 py-1 bg-gray-100 hover:bg-gray-50 font-medium" %>
+        <%= button_to "Destroy", member, method: :delete, form: { data: { turbo_confirm: "Are you sure?" } }, class: "text-sm rounded-md px-3 py-1 text-white bg-red-600 hover:bg-red-500 font-medium" %>
+      </div>
+    <% end %>
   </div>
 </div>

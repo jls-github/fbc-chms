@@ -22,9 +22,11 @@ class GroupMembersController < ApplicationController
   # POST /group_members or /group_members.json
   def create
     @group_member = GroupMember.new(group_member_params)
-
     respond_to do |format|
       if @group_member.save
+        @group = @group_member.group
+        @member = @group_member.member
+        format.turbo_stream
         format.html { redirect_to @group_member, notice: "Group member was successfully created." }
         format.json { render :show, status: :created, location: @group_member }
       else
@@ -49,9 +51,12 @@ class GroupMembersController < ApplicationController
 
   # DELETE /group_members/1 or /group_members/1.json
   def destroy
+    @group = @group_member.group
+    @member = @group_member.member
     @group_member.destroy!
 
     respond_to do |format|
+      format.turbo_stream
       format.html { redirect_to group_members_path, notice: "Group member was successfully destroyed.", status: :see_other }
       format.json { head :no_content }
     end

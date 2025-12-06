@@ -25,6 +25,9 @@ class TeamMembersController < ApplicationController
 
     respond_to do |format|
       if @team_member.save
+        @team = @team_member.team
+        @member = @team_member.member
+        format.turbo_stream
         format.html { redirect_to @team_member, notice: "Team member was successfully created." }
         format.json { render :show, status: :created, location: @team_member }
       else
@@ -49,9 +52,12 @@ class TeamMembersController < ApplicationController
 
   # DELETE /team_members/1 or /team_members/1.json
   def destroy
+    @team = @team_member.team
+    @member = @team_member.member
     @team_member.destroy!
 
     respond_to do |format|
+      format.turbo_stream
       format.html { redirect_to team_members_path, notice: "Team member was successfully destroyed.", status: :see_other }
       format.json { head :no_content }
     end

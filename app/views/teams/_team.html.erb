@@ -1,10 +1,24 @@
-<div id="<%= dom_id team %>" class="w-full sm:w-auto my-5 space-y-5">
-  <div>
-    <strong class="block font-medium mb-1">Name:</strong>
-    <%= team.name %>
-  </div>
-  <div>
-    <strong class="block font-medium mb-1">Members:</strong>
-    <%= team.members.map(&:full_name).join(", ") %>
+<div id="<%= dom_id team %>" class="w-full sm:w-auto my-5">
+  <div class="card flex flex-col h-full">
+    <div class="card-title"><%= team.name %></div>
+
+  <div class="flow-y flex-1 min-h-0">
+      <div>
+        <strong class="block font-medium mb-1">Members</strong>
+        <ul id="team-members-<%= team.id %>" class="list-disc pl-5">
+          <% team.members.each do |m| %>
+            <% tm = team.team_members.find_by(member_id: m.id) %>
+            <%= render "shared/member_list_item", member: m, membership: tm, remove_path: (tm ? team_member_path(tm) : nil) %>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+    <% if local_assigns[:show_actions] %>
+      <div class="mt-4 flex flex-wrap items-center space-x-2">
+        <%= link_to "Show", team, class: "text-sm rounded-md px-3 py-1 bg-gray-100 hover:bg-gray-50 font-medium" %>
+        <%= link_to "Edit", edit_team_path(team), class: "text-sm rounded-md px-3 py-1 bg-gray-100 hover:bg-gray-50 font-medium" %>
+        <%= button_to "Destroy", team, method: :delete, form: { data: { turbo_confirm: "Are you sure?" } }, class: "text-sm rounded-md px-3 py-1 text-white bg-red-600 hover:bg-red-500 font-medium" %>
+      </div>
+    <% end %>
   </div>
 </div>

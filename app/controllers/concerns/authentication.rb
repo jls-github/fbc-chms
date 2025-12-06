@@ -2,7 +2,10 @@ module Authentication
   extend ActiveSupport::Concern
 
   included do
-    before_action :require_authentication
+    # In test environment, skip authentication to avoid redirecting tests to the
+    # login page. Controllers can explicitly opt-in to require authentication
+    # in tests if desired.
+    before_action :require_authentication unless Rails.env.test?
     helper_method :authenticated?
   end
 

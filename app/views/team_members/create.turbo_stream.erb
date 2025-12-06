@@ -1,0 +1,7 @@
+<%= turbo_stream.append "team-members-#{@team.id}" do %>
+  <%= render "shared/member_list_item", member: @member %>
+<% end %>
+
+<%= turbo_stream.append "flash-messages" do %>
+  <div id="notice" class="py-2 px-3 bg-green-50 mb-2 text-green-500 font-medium rounded-md inline-block">Member added</div>
+<% end %>

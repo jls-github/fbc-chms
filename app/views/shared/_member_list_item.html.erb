@@ -1,0 +1,11 @@
+<li id="member-<%= member.id %>" class="flex items-center justify-between text-sm text-gray-700">
+	<span><%= member.full_name %></span>
+
+	<% if defined?(membership) && membership.present? && remove_path.present? %>
+		<div class="ml-3">
+			<%= button_to remove_path, method: :delete, form: { data: { turbo: true } }, class: "text-red-600 hover:text-red-800 text-sm", data: { turbo_confirm: "Remove #{member.full_name}?" } do %>
+				Remove
+			<% end %>
+		</div>
+	<% end %>
+</li>

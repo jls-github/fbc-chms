@@ -1,0 +1,12 @@
+<footer class="w-full bg-white border-t border-gray-100 mt-8">
+  <div class="container mx-auto px-5 py-6 text-sm text-gray-600 flex items-center justify-between">
+    <div>
+      &copy; <%= Date.current.year %> Fbc Chms
+    </div>
+
+    <div class="space-x-4">
+      <%= link_to "Privacy", privacy_path, class: "hover:text-gray-900" if respond_to?(:privacy_path) %>
+      <%= link_to "Terms", terms_path, class: "hover:text-gray-900" if respond_to?(:terms_path) %>
+    </div>
+  </div>
+</footer>

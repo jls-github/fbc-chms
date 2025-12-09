@@ -10,15 +10,58 @@
     <%= link_to "New member", new_member_path, class: "rounded-md px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white block font-medium" %>
   </div>
 
-  <div id="members" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+  <h2 class="font-bold text-2xl">Active Members</h2>
+  <div id="active-members" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
     <% if @members.any? %>
-      <% @members.each do |member| %>
+      <% @members.active.each do |member| %>
         <div class="h-full">
           <%= render member, show_actions: true %>
         </div>
       <% end %>
     <% else %>
-      <p class="text-center my-10">No members found.</p>
+      <p class="text-center my-10">No active members found.</p>
+    <% end %>
+  </div>
+  <hr class="my-6" />
+
+  <h2 class="font-bold text-2xl">Prospective Members</h2>
+  <div id="prospective-members" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+    <% if @members.prospective.any? %>
+      <% @members.prospective.each do |member| %>
+        <div class="h-full">
+          <%= render member, show_actions: true %>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="text-center my-10">No prospective members found.</p>
+    <% end %>
+  </div>
+  <hr class="my-6" />
+
+  <h2 class="font-bold text-2xl">Guests</h2>
+  <div id="guest-members" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+    <% if @members.guest.any? %>
+      <% @members.guest.each do |member| %>
+        <div class="h-full">
+          <%= render member, show_actions: true %>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="text-center my-10">No guests found.</p>
+    <% end %>
+  </div>
+  <hr class="my-6" />
+
+  <h2 class="font-bold text-2xl">Inactive/Former</h2>
+  <div id="guest-members" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+    <% if @members.inactive.any? %>
+      <% @members.inactive.each do |member| %>
+        <div class="h-full">
+          <%= render member, show_actions: true %>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="text-center my-10">No inactive members found.</p>
     <% end %>
   </div>
 </div>

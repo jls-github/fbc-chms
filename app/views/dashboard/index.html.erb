@@ -1,9 +1,11 @@
 <h1>Dashboard</h1>
 
 <ul>
-  <li>Total members: <%= @member_count.to_i %></li>
-  <li>Group members: <%= @group_member_count.to_i %></li>
-  <li>Team members: <%= @team_member_count.to_i %></li>
-  <li>Members without a group: <%= @members_without_group %></li>
-  <li>Members without a team: <%= @members_without_team %></li>
+  <li>Active Members: <%= @active_member_count %></li>
+  <li>Prospective Members: <%= @prospective_member_count %></li>
+  <li>Recent Guests: <%= @guest_member_count %></li>
+  <li>Community Group Members: <%= @group_member_count %></li>
+  <li>Ministry Team Members: <%= @team_member_count %></li>
+  <li>Members without a group: <%= @active_members_without_group %></li>
+  <li>Members without a team: <%= @active_members_without_team %></li>
 </ul>

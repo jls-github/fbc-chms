@@ -1,6 +1,8 @@
 <div id="<%= dom_id member %>" class="w-full sm:w-auto my-5">
   <div class="card flex flex-col h-full">
-    <% if member.groups.empty? || member.teams.empty? %>
+    <% if member.child_or_teen? %>
+      <div class="card-title text-blue-700"><%= member.full_name %></div>
+    <% elsif member.groups.empty? || member.teams.empty? %>
       <div class="card-title text-red-700"><%= member.full_name %></div>
     <% else %>
       <div class="card-title"><%= member.full_name %></div>
@@ -25,7 +27,7 @@
     <% end %>
 
     <div>
-      <strong class="block font-medium mb-1">Groups</strong>
+      <strong class="block font-medium mb-1">Community Group</strong>
       <% if member.groups.empty? %>
         <div class="text-sm text-red-700">No Groups</div>
       <% else %>
@@ -34,7 +36,7 @@
     </div>
 
     <div>
-      <strong class="block font-medium mb-1">Teams</strong>
+      <strong class="block font-medium mb-1">Ministry Teams</strong>
       <% if member.teams.empty? %>
         <div class="text-sm text-red-700">No Teams</div>
       <% else %>

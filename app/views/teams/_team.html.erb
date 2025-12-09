@@ -6,7 +6,7 @@
       <div>
         <strong class="block font-medium mb-1">Members</strong>
         <ul id="team-members-<%= team.id %>" class="list-disc pl-5">
-          <% team.members.each do |m| %>
+          <% team.members.order(:last_name, :first_name).each do |m| %>
             <% tm = team.team_members.find_by(member_id: m.id) %>
             <%= render "shared/member_list_item", member: m, membership: tm, team_membership: tm, remove_path: (tm ? team_member_path(tm) : nil) %>
           <% end %>

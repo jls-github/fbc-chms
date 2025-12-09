@@ -1,11 +1,40 @@
-<h1>Dashboard</h1>
+<% content_for :title, "Members" %>
 
-<ul>
-  <li>Active Members: <%= @active_member_count %></li>
-  <li>Prospective Members: <%= @prospective_member_count %></li>
-  <li>Recent Guests: <%= @guest_member_count %></li>
-  <li>Community Group Members: <%= @group_member_count %></li>
-  <li>Ministry Team Members: <%= @team_member_count %></li>
-  <li>Members without a group: <%= @active_members_without_group %></li>
-  <li>Members without a team: <%= @active_members_without_team %></li>
-</ul>
+<h1 class="font-bold text-4xl">Dashboard</h1>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+  <div class="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition rounded-lg p-5">
+    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Members</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white"><%= @active_member_count %></p>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition rounded-lg p-5">
+    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Prospective Members</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white"><%= @prospective_member_count %></p>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition rounded-lg p-5">
+    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Recent Guests</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white"><%= @guest_member_count %></p>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition rounded-lg p-5">
+    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Community Group Members</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white"><%= @group_member_count %></p>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition rounded-lg p-5">
+    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Ministry Team Members</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white"><%= @team_member_count %></p>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition rounded-lg p-5">
+    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Adult Members Not in a Community Group</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white"><%= @active_members_without_group %></p>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition rounded-lg p-5 lg:col-span-2">
+    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Adult Members Not on a Ministry Team</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white"><%= @active_members_without_team %></p>
+  </div>
+</div>

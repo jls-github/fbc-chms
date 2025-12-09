@@ -3,6 +3,7 @@
     <div class="card-title"><%= member.full_name %></div>
 
   <div class="flow-y flex-1 min-h-0">
+    <% if defined?(show_full_details) && show_full_details %>
       <div>
         <strong class="block font-medium mb-1">Address</strong>
         <div class="text-sm text-gray-700"><%= member.full_address %></div>
@@ -17,15 +18,16 @@
         <strong class="block font-medium mb-1">Email</strong>
         <div class="text-sm text-gray-700"><%= member.email %></div>
       </div>
+    <% end %>
 
-      <div>
-        <strong class="block font-medium mb-1">Groups</strong>
-        <div class="text-sm text-gray-700"><%= !member.groups.empty? ? member.groups.map(&:name).join(", ") : 'No Groups' %></div>
-      </div>
+    <div>
+      <strong class="block font-medium mb-1">Groups</strong>
+      <div class="text-sm text-gray-700"><%= !member.groups.empty? ? member.groups.map(&:name).join(", ") : 'No Groups' %></div>
+    </div>
 
-      <div>
-        <strong class="block font-medium mb-1">Teams</strong>
-        <div class="text-sm text-gray-700"><%= !member.teams.empty? ? member.teams.map(&:name).join(", ") : 'No Teams' %></div>
+    <div>
+      <strong class="block font-medium mb-1">Teams</strong>
+      <div class="text-sm text-gray-700"><%= !member.teams.empty? ? member.teams.map(&:name).join(", ") : 'No Teams' %></div>
       </div>
     </div>
     <% if local_assigns[:show_actions] %>

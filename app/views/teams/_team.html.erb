@@ -8,7 +8,7 @@
         <ul id="team-members-<%= team.id %>" class="list-disc pl-5">
           <% team.members.each do |m| %>
             <% tm = team.team_members.find_by(member_id: m.id) %>
-            <%= render "shared/member_list_item", member: m, membership: tm, remove_path: (tm ? team_member_path(tm) : nil) %>
+            <%= render "shared/member_list_item", member: m, membership: tm, team_membership: tm, remove_path: (tm ? team_member_path(tm) : nil) %>
           <% end %>
         </ul>
       </div>

@@ -7,7 +7,7 @@
 
   <h1 class="font-bold text-4xl">Showing member</h1>
 
-  <%= render @member %>
+  <%= render @member, show_full_details: true %>
 
   <%= link_to "Edit this member", edit_member_path(@member), class: "w-full sm:w-auto text-center rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>
   <%= link_to "Back to members", members_path, class: "w-full sm:w-auto text-center mt-2 sm:mt-0 sm:ml-2 rounded-md px-3.5 py-2.5 bg-gray-100 hover:bg-gray-50 inline-block font-medium" %>

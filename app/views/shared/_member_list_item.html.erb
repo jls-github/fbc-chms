@@ -1,5 +1,9 @@
 <li id="member-<%= member.id %>" class="flex items-center justify-between text-sm text-gray-700">
-	<span><%= member.full_name %></span>
+  <% if defined?(team_membership) %>
+	  <span><%= "#{member.full_name} - #{team_membership.role}" %></span>
+  <% else %>
+    <span><%= member.full_name %></span>
+  <% end %>
 
 	<% if defined?(membership) && membership.present? && remove_path.present? %>
 		<div class="ml-3">

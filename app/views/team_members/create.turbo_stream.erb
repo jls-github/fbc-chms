@@ -1,5 +1,5 @@
 <%= turbo_stream.append "team-members-#{@team.id}" do %>
-  <%= render "shared/member_list_item", member: @member %>
+  <%= render "shared/member_list_item", member: @member, team_membership: @team_member %>
 <% end %>
 
 <%= turbo_stream.append "flash-messages" do %>

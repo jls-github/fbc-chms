@@ -1,6 +1,10 @@
 <div id="<%= dom_id member %>" class="w-full sm:w-auto my-5">
   <div class="card flex flex-col h-full">
-    <div class="card-title"><%= member.full_name %></div>
+    <% if member.groups.empty? || member.teams.empty? %>
+      <div class="card-title text-red-700"><%= member.full_name %></div>
+    <% else %>
+      <div class="card-title"><%= member.full_name %></div>
+    <% end %>
 
   <div class="flow-y flex-1 min-h-0">
     <% if defined?(show_full_details) && show_full_details %>
@@ -22,12 +26,20 @@
 
     <div>
       <strong class="block font-medium mb-1">Groups</strong>
-      <div class="text-sm text-gray-700"><%= !member.groups.empty? ? member.groups.map(&:name).join(", ") : 'No Groups' %></div>
+      <% if member.groups.empty? %>
+        <div class="text-sm text-red-700">No Groups</div>
+      <% else %>
+        <div class="text-sm text-gray-700"><%= member.groups.map(&:name).join(", ") %></div>
+      <% end %>
     </div>
 
     <div>
       <strong class="block font-medium mb-1">Teams</strong>
-      <div class="text-sm text-gray-700"><%= !member.teams.empty? ? member.teams.map(&:name).join(", ") : 'No Teams' %></div>
+      <% if member.teams.empty? %>
+        <div class="text-sm text-red-700">No Teams</div>
+      <% else %>
+        <div class="text-sm text-gray-700"><%= member.teams.map(&:name).join(", ") %></div>
+      <% end %>
       </div>
     </div>
     <% if local_assigns[:show_actions] %>

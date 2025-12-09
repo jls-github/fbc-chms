@@ -1,7 +1,9 @@
 <h1>Dashboard</h1>
 
 <ul>
+  <li>Total members: <%= @member_count.to_i %></li>
   <li>Group members: <%= @group_member_count.to_i %></li>
   <li>Team members: <%= @team_member_count.to_i %></li>
-  <li>Total members: <%= @member_count.to_i %></li>
+  <li>Members without a group: <%= @members_without_group %></li>
+  <li>Members without a team: <%= @members_without_team %></li>
 </ul>

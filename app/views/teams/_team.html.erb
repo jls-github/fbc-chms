@@ -4,6 +4,10 @@
 
   <div class="flow-y flex-1 min-h-0">
       <div>
+        <strong class="block font-medium mb-1">Leader</strong>
+        <div class="text-sm text-gray-700"><%= team.leader_name %></div>
+      </div>
+      <div>
         <strong class="block font-medium mb-1">Members</strong>
         <ul id="team-members-<%= team.id %>" class="list-disc pl-5">
           <% team.members.order(:last_name, :first_name).each do |m| %>

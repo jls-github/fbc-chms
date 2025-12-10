@@ -65,6 +65,6 @@ class TeamsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def team_params
-      params.expect(team: [ :name ])
+      params.expect(team: [ :name, :team_leader_id ])
     end
 end

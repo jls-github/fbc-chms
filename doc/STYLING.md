@@ -1,8 +1,9 @@
 Styling for fbc-chms
 
 This app uses Tailwind CSS via the `tailwindcss-rails` gem. Tailwind's entry is
-located at `app/assets/tailwind/application.css`. Custom base styles and a few
-small reusable components (buttons, cards, form inputs) live in that file.
+located at `app/assets/stylesheets/application.tailwind.css`. Custom base styles
+and a few small reusable components (buttons, cards, form inputs) live in that
+file.
 
 To run Tailwind in development (watch for changes):
 

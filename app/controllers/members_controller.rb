@@ -3,7 +3,7 @@ class MembersController < ApplicationController
 
   # GET /members or /members.json
   def index
-    members = Member.all
+    members = Member.includes(:groups, :teams).all
     @active_members = members.where(status: :active).decorate
     @inactive_members = members.where(status: :inactive).decorate
     @prospective_members = members.where(status: :prospective).decorate

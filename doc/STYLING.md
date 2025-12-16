@@ -1,25 +1,20 @@
 Styling for fbc-chms
 
-This app uses Tailwind CSS via the `tailwindcss-rails` gem. Tailwind's entry is
-located at `app/assets/stylesheets/application.tailwind.css`. Custom base styles
-and a few small reusable components (buttons, cards, form inputs) live in that
-file.
+This app uses Tailwind CSS via the CDN. Tailwind is loaded from `https://cdn.tailwindcss.com`
+in the application layout, and custom base styles and reusable components (buttons, cards,
+form inputs) are defined in `app/assets/stylesheets/application.css`.
 
-To run Tailwind in development (watch for changes):
-
-```bash
-bin/rails tailwindcss:watch
-```
-
-If you're using the local Procfile for development the project already contains
-an entry to run the Tailwind watcher (see `Procfile.dev`).
+The Tailwind CDN is configured with custom theme extensions (primary colors and Inter font)
+via JavaScript in the layout file. No build process is required — changes to CSS take effect
+immediately on page refresh.
 
 Notes:
 - Prefer Tailwind utility classes in views. The small `.btn-primary`, `.btn-secondary`, `.card`, and
-  `.form-input` components are convenience helpers placed in the Tailwind
-  entry file.
-- If you change Tailwind configuration or add plugins, run the build/watch
-  commands so the compiled CSS in `app/assets/builds/tailwind.css` is updated.
+  `.form-input` components are convenience helpers defined in `application.css`.
+- To modify Tailwind theme configuration, update the `tailwind.config` JavaScript object in
+  `app/views/layouts/application.html.erb`.
+- Custom component styles in `application.css` use regular CSS (not `@apply` directives) for
+  compatibility with the CDN.
 
 Examples
 --------

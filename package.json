@@ -1,0 +1,27 @@
+{
+  "name": "fbc-chms",
+  "version": "1.0.0",
+  "description": "This README would normally document whatever steps are necessary to get the application up and running.",
+  "main": "tailwind.config.js",
+  "directories": {
+    "doc": "doc",
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jls-github/fbc-chms.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jls-github/fbc-chms/issues"
+  },
+  "homepage": "https://github.com/jls-github/fbc-chms#readme",
+  "dependencies": {
+    "tailwindcss": "^4.1.18"
+  }
+}

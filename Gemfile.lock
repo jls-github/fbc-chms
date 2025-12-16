@@ -49,6 +49,10 @@ GEM
       globalid (>= 0.3.6)
     activemodel (8.0.4)
       activesupport (= 8.0.4)
+    activemodel-serializers-xml (1.0.3)
+      activemodel (>= 5.0.0.a)
+      activesupport (>= 5.0.0.a)
+      builder (~> 3.1)
     activerecord (8.0.4)
       activemodel (= 8.0.4)
       activesupport (= 8.0.4)
@@ -103,6 +107,13 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     dotenv (3.2.0)
+    draper (4.0.6)
+      actionpack (>= 5.0)
+      activemodel (>= 5.0)
+      activemodel-serializers-xml (>= 1.0)
+      activesupport (>= 5.0)
+      request_store (>= 1.0)
+      ruby2_keywords
     drb (2.2.3)
     ed25519 (1.4.0)
     erb (6.0.0)
@@ -254,6 +265,8 @@ GEM
     regexp_parser (2.11.3)
     reline (0.6.3)
       io-console (~> 0.5)
+    request_store (1.7.0)
+      rack (>= 1.4)
     rexml (3.4.4)
     rubocop (1.81.7)
       json (~> 2.3)
@@ -284,6 +297,7 @@ GEM
       rubocop-performance (>= 1.24)
       rubocop-rails (>= 2.30)
     ruby-progressbar (1.13.0)
+    ruby2_keywords (0.0.5)
     rubyzip (3.2.2)
     securerandom (0.4.1)
     seed_dump (3.4.0)
@@ -377,6 +391,7 @@ DEPENDENCIES
   brakeman
   capybara
   debug
+  draper
   importmap-rails
   jbuilder
   kamal

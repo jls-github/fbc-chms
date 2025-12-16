@@ -11,57 +11,82 @@
   </div>
 
   <h2 class="font-bold text-2xl">Active Members</h2>
-  <div id="active-members" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
-    <% if @members.any? %>
-      <% @members.active.each do |member| %>
-        <div class="h-full">
-          <%= render member, show_actions: true %>
-        </div>
+  
+  <table class="table-fixed w-full mt-4 border-collapse border border-gray-200">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Community Group</th>
+        <th>Ministry Team</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <% @active_members.each do |member| %>
+        <tr class="hover:bg-gray-100 text-center">
+          <td><%= link_to member.full_name, member_path(member) %></td> 
+          <td><%= member.group_name %></td>
+          <td><%= member.teams_list %></td>
+        </tr>
       <% end %>
-    <% else %>
-      <p class="text-center my-10">No active members found.</p>
-    <% end %>
-  </div>
-  <hr class="my-6" />
+  </table>
 
   <h2 class="font-bold text-2xl">Prospective Members</h2>
-  <div id="prospective-members" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
-    <% if @members.prospective.any? %>
-      <% @members.prospective.each do |member| %>
-        <div class="h-full">
-          <%= render member, show_actions: true %>
-        </div>
+  
+  <table class="table-fixed w-full mt-4 border-collapse border border-gray-200">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Community Group</th>
+        <th>Ministry Team</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <% @prospective_members.each do |member| %>
+        <tr class="hover:bg-gray-100 text-center">
+          <td><%= link_to member.full_name, member_path(member) %></td> 
+          <td><%= member.group_name %></td>
+          <td><%= member.teams_list %></td>
+        </tr>
       <% end %>
-    <% else %>
-      <p class="text-center my-10">No prospective members found.</p>
-    <% end %>
-  </div>
-  <hr class="my-6" />
+  </table>
 
   <h2 class="font-bold text-2xl">Guests</h2>
-  <div id="guest-members" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
-    <% if @members.guest.any? %>
-      <% @members.guest.each do |member| %>
-        <div class="h-full">
-          <%= render member, show_actions: true %>
-        </div>
+  
+  <table class="table-fixed w-full mt-4 border-collapse border border-gray-200">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Community Group</th>
+        <th>Ministry Team</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <% @guest_members.each do |member| %>
+        <tr class="hover:bg-gray-100 text-center">
+          <td><%= link_to member.full_name, member_path(member) %></td> 
+          <td><%= member.group_name %></td>
+          <td><%= member.teams_list %></td>
+        </tr>
       <% end %>
-    <% else %>
-      <p class="text-center my-10">No guests found.</p>
-    <% end %>
-  </div>
-  <hr class="my-6" />
+  </table>
 
-  <h2 class="font-bold text-2xl">Inactive/Former</h2>
-  <div id="guest-members" class="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
-    <% if @members.inactive.any? %>
-      <% @members.inactive.each do |member| %>
-        <div class="h-full">
-          <%= render member, show_actions: true %>
-        </div>
+  <h2 class="font-bold text-2xl">Former/Inactive Members</h2>
+  
+  <table class="table-fixed w-full mt-4 border-collapse border border-gray-200">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Community Group</th>
+        <th>Ministry Team</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <% @inactive_members.each do |member| %>
+        <tr class="hover:bg-gray-100 text-center">
+          <td><%= link_to member.full_name, member_path(member) %></td> 
+          <td><%= member.group_name %></td>
+          <td><%= member.teams_list %></td>
+        </tr>
       <% end %>
-    <% else %>
-      <p class="text-center my-10">No inactive members found.</p>
-    <% end %>
-  </div>
-</div>
+  </table>
+

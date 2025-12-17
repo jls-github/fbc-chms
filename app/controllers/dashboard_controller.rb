@@ -8,5 +8,6 @@ class DashboardController < ApplicationController
     @team_member_count = TeamMember.pluck(:member_id).uniq.count
     @active_members_without_group = Member.left_joins(:group_members).active.where(child_or_teen: [ nil, false ], group_members: { id: nil }).map(&:full_name).join(", ")
     @active_members_without_team = Member.left_joins(:team_members).active.where(child_or_teen: [ nil, false ], team_members: { id: nil }).map(&:full_name).join(", ")
+    @quarterly_sunday_attendance = AttendanceReport.where(date: 3.months.ago..Date.today, event_type: 'sunday_service').average(:attendance).round
   end
 end

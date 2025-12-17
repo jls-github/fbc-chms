@@ -1,0 +1,32 @@
+<%= form_with(model: attendance_report, class: "form") do |form| %>
+  <% if attendance_report.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(attendance_report.errors.count, "error") %> prohibited this attendance_report from being saved:</h2>
+
+      <ul>
+        <% attendance_report.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :event_type, style: "display: block", class: "form-label" %>
+    <%= form.select :event_type, options_for_select(AttendanceReport.event_types.map { |k, v| [k.to_s.humanize.titleize, k] }), include_blank: true, class: "form-select" %>
+  </div>
+
+  <div>
+    <%= form.label :date, style: "display: block", class: "form-label" %>
+    <%= form.date_field :date, class: "form-control" %>
+  </div>
+
+  <div>
+    <%= form.label :attendance, style: "display: block", class: "form-label" %>
+    <%= form.number_field :attendance, class: "form-control" %>
+  </div>
+
+  <div>
+    <%= form.submit "Save", class: "btn btn-primary" %>
+  </div>
+<% end %>

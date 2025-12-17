@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :attendance_reports
   resources :group_members
   resources :groups
   resources :team_members

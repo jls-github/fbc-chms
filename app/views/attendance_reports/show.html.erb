@@ -1,0 +1,11 @@
+<p style="color: green"><%= notice %></p>
+
+<h2 class="text-2xl font-bold mb-4"><%= @attendance_report.readable_event_type %></h2>
+<%= render @attendance_report %>
+
+<div>
+  <%= link_to "Edit this attendance report", edit_attendance_report_path(@attendance_report) %> |
+  <%= link_to "Back to attendance reports", attendance_reports_path %>
+
+  <%= button_to "Destroy this attendance report", @attendance_report, method: :delete %>
+</div>

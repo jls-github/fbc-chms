@@ -12,80 +12,80 @@
 
   <h2 class="font-bold text-2xl">Active Members</h2>
   
-  <table class="table-fixed w-full mt-4 border-collapse border border-gray-200">
+  <table class="table-fixed w-full mt-4 border-separate border border-gray-400">
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Community Group</th>
-        <th>Ministry Team</th>
+        <th class="border border-gray-300">Name</th>
+        <th class="border border-gray-300">Community Group</th>
+        <th class="border border-gray-300">Ministry Team</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-gray-200">
+    <tbody class="border border-gray-300">
       <% @active_members.each do |member| %>
-        <tr class="hover:bg-gray-100 text-center">
-          <td><%= link_to member.full_name, member_path(member) %></td> 
-          <td><%= member.group_name %></td>
-          <td><%= member.teams_list %></td>
+        <tr class="hover:bg-gray-100">
+          <td class="border border-gray-300"><%= link_to member.full_name, member_path(member) %></td> 
+          <td class="border border-gray-300"><%= member.group_name %></td>
+          <td class="border border-gray-300"><%= member.teams_list %></td>
         </tr>
       <% end %>
   </table>
 
   <h2 class="font-bold text-2xl">Prospective Members</h2>
   
-  <table class="table-fixed w-full mt-4 border-collapse border border-gray-200">
+  <table class="table-fixed w-full mt-4 border-separate border border-gray-400">
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Community Group</th>
-        <th>Ministry Team</th>
+        <th class="border border-gray-300">Name</th>
+        <th class="border border-gray-300">Community Group</th>
+        <th class="border border-gray-300">Ministry Team</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-200">
       <% @prospective_members.each do |member| %>
-        <tr class="hover:bg-gray-100 text-center">
-          <td><%= link_to member.full_name, member_path(member) %></td> 
-          <td><%= member.group_name %></td>
-          <td><%= member.teams_list %></td>
+        <tr class="hover:bg-gray-100 ">
+          <td class="border border-gray-300"><%= link_to member.full_name, member_path(member) %></td> 
+          <td class="border border-gray-300"><%= member.group_name %></td>
+          <td class="border border-gray-300"><%= member.teams_list %></td>
         </tr>
       <% end %>
   </table>
 
   <h2 class="font-bold text-2xl">Guests</h2>
   
-  <table class="table-fixed w-full mt-4 border-collapse border border-gray-200">
+  <table class="table-fixed w-full mt-4 border-separate border border-gray-400">
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Community Group</th>
-        <th>Ministry Team</th>
+        <th class="border border-gray-300">Name</th>
+        <th class="border border-gray-300">Community Group</th>
+        <th class="border border-gray-300">Ministry Team</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-200">
       <% @guest_members.each do |member| %>
-        <tr class="hover:bg-gray-100 text-center">
-          <td><%= link_to member.full_name, member_path(member) %></td> 
-          <td><%= member.group_name %></td>
-          <td><%= member.teams_list %></td>
+        <tr class="hover:bg-gray-100 ">
+          <td class="border border-gray-300"><%= link_to member.full_name, member_path(member) %></td> 
+          <td class="border border-gray-300"><%= member.group_name %></td>
+          <td class="border border-gray-300"><%= member.teams_list %></td>
         </tr>
       <% end %>
   </table>
 
   <h2 class="font-bold text-2xl">Former/Inactive Members</h2>
   
-  <table class="table-fixed w-full mt-4 border-collapse border border-gray-200">
+  <table class="table-fixed w-full mt-4 border-separate border border-gray-400">
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Community Group</th>
-        <th>Ministry Team</th>
+        <th class="border border-gray-300">Name</th>
+        <th class="border border-gray-300">Community Group</th>
+        <th class="border border-gray-300">Ministry Team</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-200">
       <% @inactive_members.each do |member| %>
-        <tr class="hover:bg-gray-100 text-center">
-          <td><%= link_to member.full_name, member_path(member) %></td> 
-          <td><%= member.group_name %></td>
-          <td><%= member.teams_list %></td>
+        <tr class="hover:bg-gray-100 ">
+          <td class="border border-gray-300"><%= link_to member.full_name, member_path(member) %></td> 
+          <td class="border border-gray-300"><%= member.group_name %></td>
+          <td class="border border-gray-300"><%= member.teams_list %></td>
         </tr>
       <% end %>
   </table>

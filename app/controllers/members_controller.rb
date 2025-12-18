@@ -1,13 +1,14 @@
-class MembersController < ApplicationController
+class MembersController < InertiaController
   before_action :set_member, only: %i[ show edit update destroy ]
 
   # GET /members or /members.json
   def index
-    members = Member.includes(:groups, :teams).all
-    @active_members = members.where(status: :active).decorate
-    @inactive_members = members.where(status: :inactive).decorate
-    @prospective_members = members.where(status: :prospective).decorate
-    @guest_members = members.where(status: :guest).decorate
+    @members = Member.includes(:groups, :teams).decorate
+    @presenter = MembersInertiaIndexPresenter.new(members: @members)
+
+    render inertia: {
+      members: @presenter.as_json
+    }
   end
 
   # GET /members/1 or /members/1.json

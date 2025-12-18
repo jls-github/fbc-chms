@@ -5,7 +5,7 @@
       <nav class="hidden sm:flex items-center space-x-3 text-sm text-gray-600">
         <%= link_to "Groups", groups_path, class: "hover:text-gray-900" %>
         <%= link_to "Teams", teams_path, class: "hover:text-gray-900" %>
-        <%= link_to "Members", members_path, class: "hover:text-gray-900" %>
+        <%= link_to "Members", members_path, class: "hover:text-gray-900", data: { turbo: false } %>
         <%= link_to "Attendance", attendance_reports_path, class: "hover:text-gray-900" %>
       </nav>
     </div>

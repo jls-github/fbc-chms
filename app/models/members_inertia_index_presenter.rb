@@ -8,9 +8,11 @@ class MembersInertiaIndexPresenter
       {
         id: member.id,
         name: member.full_name,
-        teams_list: member.teams_list,
-        group_name: member.group_name,
+        teamsList: member.teams_list,
+        groupName: member.group_name,
         status: member.status,
+        firstName: member.first_name,
+        lastName: member.last_name
       }
     end
   end

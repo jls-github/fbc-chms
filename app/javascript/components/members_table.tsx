@@ -1,13 +1,9 @@
+import { Member } from "@/types/member";
+
 export default function MembersTable({
   members,
 }: {
-  members: Array<{
-    id: number;
-    name: string;
-    teams_list: string;
-    group_name: string;
-    status: string;
-  }>;
+  members: Array<Member>;
 }) {
   return (
     <table className="w-full divide-y divide-gray-200 table-fixed">
@@ -40,10 +36,10 @@ export default function MembersTable({
               <a href={`/members/${member.id}`}>{member.name}</a>
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {member.group_name}
+              {member.groupName}
             </td>
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {member.teams_list}
+              {member.teamsList}
             </td>
           </tr>
         ))}

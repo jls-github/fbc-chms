@@ -1,13 +1,9 @@
+import { Member } from "@/types/member";
+
 export default function MemberCard({
   member,
 }: {
-  member: {
-    id: number;
-    name: string;
-    teams_list: string;
-    group_name: string;
-    status: string;
-  };
+  member: Member;
 }) {
   return (
     <div id={`member-${member.id}`} className="w-full sm:w-auto my-5">
@@ -18,11 +14,11 @@ export default function MemberCard({
             <strong className="block font-medium mb-1">
               Community Group:{" "}
             </strong>
-            <div className="text-sm gray-700">{member.group_name}</div>
+            <div className="text-sm gray-700">{member.groupName}</div>
           </div>
           <div>
             <strong className="block font-medium mb-1">Teams: </strong>
-            <div className="text-sm gray-700">{member.teams_list}</div>
+            <div className="text-sm gray-700">{member.teamsList}</div>
           </div>
           <div>
             <a

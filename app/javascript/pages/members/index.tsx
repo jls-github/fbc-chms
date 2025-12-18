@@ -2,24 +2,21 @@ import MembersTable from "../../components/members_table.tsx";
 import MemberCard from "../../components/member_card.tsx";
 
 import { useState } from "react";
+import { Member } from "@/types/member.ts";
 
 export default function MembersInertia({
   members,
 }: {
-  members: Array<{
-    id: number;
-    name: string;
-    teams_list: string;
-    group_name: string;
-    status: string;
-  }>;
+  members: Array<Member>;
 }) {
-  const activeMembers = members.filter((member) => member.status === "active");
-  const prospectiveMembers = members.filter(
+  const sortedMembers = members.sort((a, b) => a.lastName.localeCompare(b.lastName));
+
+  const activeMembers = sortedMembers.filter((member) => member.status === "active");
+  const prospectiveMembers = sortedMembers.filter(
     (member) => member.status === "prospective"
   );
-  const guests = members.filter((member) => member.status === "guest");
-  const inactiveMembers = members.filter(
+  const guests = sortedMembers.filter((member) => member.status === "guest");
+  const inactiveMembers = sortedMembers.filter(
     (member) => member.status === "inactive"
   );
 

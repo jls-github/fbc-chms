@@ -70,6 +70,6 @@ class MembersController < InertiaController
 
     # Only allow a list of trusted parameters through.
     def member_params
-      params.expect(member: [ :first_name, :last_name, :address_1, :address_2, :city, :state, :postal_code, :phone, :email, :status, :child_or_teen ])
+      params.expect(member: [ :first_name, :last_name, :address_1, :address_2, :city, :state, :postal_code, :phone, :email, :status, :child_or_teen, :birthdate, :family_id ])
     end
 end

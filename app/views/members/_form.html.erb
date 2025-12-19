@@ -57,6 +57,11 @@
   </div>
 
   <div class="my-5">
+    <%= form.label :birthdate %>
+    <%= form.date_field :birthdate, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": member.errors[:birthdate].none?, "border-red-400 focus:outline-red-600": member.errors[:birthdate].any?}] %>
+  </div>
+
+  <div class="my-5">
     <%= form.check_box :child_or_teen, class: ["mt-2", {"accent-blue-600": member.errors[:child_or_teen].none?, "accent-red-600": member.errors[:child_or_teen].any?}] %>
     <%= form.label :child_or_teen, "Is this member a child or teen?" %>
   </div>
@@ -64,6 +69,11 @@
   <div class="my-5">
     <%= form.label :status %>
     <%= form.select :status, Member.statuses.keys.map { |s| [s.titleize, s] }, {}, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": member.errors[:status].none?, "border-red-400 focus:outline-red-600": member.errors[:status].any?}] %>
+  </div>
+
+  <div class="my-5">
+    <%= form.label :family_id, "Family", class: "form-label" %>
+    <%= form.select :family_id, options_from_collection_for_select(Family.all, :id, :name, member.family_id), { include_blank: "Select a family" }, class: ["block shadow-sm rounded-md border px-3 py-2 mt-2 w-full", {"border-gray-400 focus:outline-blue-600": member.errors[:family_id].none?, "border-red-400 focus:outline-red-600": member.errors[:family_id].any?}] %>
   </div>
 
   <div class="inline">

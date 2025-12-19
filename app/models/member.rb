@@ -5,6 +5,7 @@ class Member < ApplicationRecord
   has_many :teams, through: :team_members
   has_many :group_members, dependent: :destroy
   has_many :groups, through: :group_members
+  belongs_to :family, optional: true
 
   def full_name
     "#{first_name} #{last_name}"
@@ -20,5 +21,9 @@ class Member < ApplicationRecord
     else
       "#{address_1}, #{city}, #{state}, #{postal_code}"
     end
+  end
+
+  def family?
+    family.present?
   end
 end

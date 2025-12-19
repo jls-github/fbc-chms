@@ -10,11 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_16_234230) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_19_014102) do
   create_table "attendance_reports", force: :cascade do |t|
     t.integer "event_type"
     t.date "date"
     t.integer "attendance"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "families", force: :cascade do |t|
+    t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -50,6 +56,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_16_234230) do
     t.string "state"
     t.integer "status"
     t.boolean "child_or_teen"
+    t.integer "family_id"
+    t.date "birthdate"
+    t.index ["family_id"], name: "index_members_on_family_id"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -89,6 +98,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_16_234230) do
 
   add_foreign_key "group_members", "groups"
   add_foreign_key "group_members", "members"
+  add_foreign_key "members", "families"
   add_foreign_key "sessions", "users"
   add_foreign_key "team_members", "members"
   add_foreign_key "team_members", "teams"

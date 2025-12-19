@@ -1,12 +1,6 @@
 <div id="<%= dom_id member %>" class="w-full sm:w-auto my-5">
   <div class="card flex flex-col h-full">
-    <% if member.child_or_teen? %>
-      <div class="card-title text-blue-700"><%= member.full_name %></div>
-    <% elsif member.groups.empty? || member.teams.empty? %>
-      <div class="card-title text-red-700"><%= member.full_name %></div>
-    <% else %>
-      <div class="card-title"><%= member.full_name %></div>
-    <% end %>
+    <div class="card-title"><%= member.full_name %></div>
 
   <div class="flow-y flex-1 min-h-0">
     <% if defined?(show_full_details) && show_full_details %>
@@ -24,7 +18,22 @@
         <strong class="block font-medium mb-1">Email</strong>
         <div class="text-sm text-gray-700"><%= member.email %></div>
       </div>
+
+      <div>
+        <strong class="block font-medium mb-1">Birthdate</strong>
+        <div class="text-sm text-gray-700"><%= member.birthdate %></div>
+      </div>
+
+      <div>
+        <strong class="block font-medium mb-1">Family</strong>
+        <% unless member.family? %>
+          <div class="text-sm text-red-700">No Family</div>
+        <% else %>
+          <div class="text-sm text-gray-700"><%= member.family.name %></div>
+        <% end %>
+      </div>
     <% end %>
+
 
     <div>
       <strong class="block font-medium mb-1">Community Group</strong>

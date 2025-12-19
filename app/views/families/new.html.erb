@@ -1,0 +1,11 @@
+<% content_for :title, "New family" %>
+
+<h1>New family</h1>
+
+<%= render "form", family: @family %>
+
+<br>
+
+<div>
+  <%= link_to "Back to families", families_path %>
+</div>

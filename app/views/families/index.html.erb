@@ -1,0 +1,13 @@
+<p style="color: green"><%= notice %></p>
+
+<% content_for :title, "Families" %>
+
+<h1>Families</h1>
+
+<div id="families">
+  <% @families.each do |family| %>
+    <%= render family, show_actions: true %>
+  <% end %>
+</div>
+
+<%= link_to "New family", new_family_path %>

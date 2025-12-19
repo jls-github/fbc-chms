@@ -1,5 +1,6 @@
 import MembersTable from "../../components/members_table.tsx";
 import MemberCard from "../../components/member_card.tsx";
+import Directory from "@/components/directory.tsx";
 
 import { useState } from "react";
 import { Member } from "@/types/member.ts";
@@ -9,9 +10,13 @@ export default function MembersInertia({
 }: {
   members: Array<Member>;
 }) {
-  const sortedMembers = members.sort((a, b) => a.lastName.localeCompare(b.lastName));
+  const sortedMembers = members.sort((a, b) =>
+    a.lastName.localeCompare(b.lastName)
+  );
 
-  const activeMembers = sortedMembers.filter((member) => member.status === "active");
+  const activeMembers = sortedMembers.filter(
+    (member) => member.status === "active"
+  );
   const prospectiveMembers = sortedMembers.filter(
     (member) => member.status === "prospective"
   );
@@ -19,6 +24,15 @@ export default function MembersInertia({
   const inactiveMembers = sortedMembers.filter(
     (member) => member.status === "inactive"
   );
+
+  const families = members.reduce((acc, member) => {
+    const familyName = member.family ? member.family : "No Family";
+    if (!acc[familyName]) {
+      acc[familyName] = [] as Array<Member>;
+    }
+    acc[familyName].push(member);
+    return acc;
+  }, {} as Record<string, Array<Member>>);
 
   const [memberViewType, setMemberViewType] = useState("card");
 
@@ -45,7 +59,7 @@ export default function MembersInertia({
           />
           Table View
         </label>
-        <label>
+        <label className="mr-4">
           <input
             type="radio"
             name="viewType"
@@ -55,6 +69,17 @@ export default function MembersInertia({
             className="mr-1"
           />
           Card View
+        </label>
+        <label className="mr-4">
+          <input
+            type="radio"
+            name="viewType"
+            value="directory"
+            checked={memberViewType === "directory"}
+            onChange={() => setMemberViewType("directory")}
+            className="mr-1"
+          />
+          Directory View
         </label>
       </div>
 
@@ -86,7 +111,9 @@ export default function MembersInertia({
             ))}
           </div>
           <hr className="my-6" />
-          <h2 className="font-semibold text-2xl mt-8 mb-4">Prospective Members</h2>
+          <h2 className="font-semibold text-2xl mt-8 mb-4">
+            Prospective Members
+          </h2>
           <div
             id="prospective-members"
             className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-stretch"
@@ -116,7 +143,7 @@ export default function MembersInertia({
             ))}
           </div>
         </div>
-      ) : null}
+      ) : memberViewType === "directory" ? <Directory membersByFamily={families} /> : null }
     </>
   );
 }

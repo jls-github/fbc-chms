@@ -27,3 +27,26 @@ export function withRollingAverage<T extends { date: string; value: number }>(
     return { ...point, rollingAverage: Math.round(sum / windowCount), windowCount };
   });
 }
+
+/** The Sunday that starts the (Sunday–Saturday) week containing a YYYY-MM-DD date. */
+export function weekStart(iso: string): string {
+  const day = dayNumber(iso);
+  const dow = (day + 4) % 7; // 1970-01-01 was a Thursday; 0 = Sunday
+  return new Date((day - dow) * 86_400_000).toISOString().slice(0, 10);
+}
+
+/**
+ * Sums reports into Sunday–Saturday weeks, oldest first. Weeks with no reports
+ * are left out (no data, not zero people).
+ */
+export function weeklyTotals<T extends { date: string; attendance: number }>(reports: T[]) {
+  const weeks = new Map<string, { date: string; value: number; reports: T[] }>();
+  for (const r of reports) {
+    const key = weekStart(r.date);
+    const week = weeks.get(key) ?? { date: key, value: 0, reports: [] };
+    week.value += r.attendance;
+    week.reports.push(r);
+    weeks.set(key, week);
+  }
+  return [...weeks.values()].sort((a, b) => a.date.localeCompare(b.date));
+}

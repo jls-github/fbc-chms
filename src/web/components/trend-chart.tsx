@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDay, formatShortDay } from "../lib/format";
 
-type Point = { date: string; value: number; note?: string };
+type Point = { date: string; value: number; note?: string; dateLabel?: string };
 
 /**
  * Single-series line chart for change over time. The series colour is
@@ -115,7 +115,7 @@ export function TrendChart({ points, label, height = 220 }: { points: Point[]; l
           <div className="text-sm font-semibold text-zinc-900 tabular-nums dark:text-white">{points[active]!.value}</div>
           <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
             <span className="h-0.5 w-3 rounded bg-[var(--series)]" aria-hidden />
-            {formatDay(points[active]!.date)}
+            {points[active]!.dateLabel ?? formatDay(points[active]!.date)}
           </div>
           {points[active]!.note && <div className="mt-0.5 text-zinc-500 dark:text-zinc-400">{points[active]!.note}</div>}
         </div>

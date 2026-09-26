@@ -25,10 +25,10 @@ import {
 } from "../components/ui";
 import { errorMessage } from "../lib/api";
 import { useForm } from "../lib/form";
-import { formatDay, formatShortDay, todayIso } from "../lib/format";
+import { formatDay, formatShortDay, parseDay, todayIso } from "../lib/format";
 import { useAttendance, useDeleteAttendance, useMe, useReportLinks, useRotateReportLink, useSaveAttendance } from "../lib/queries";
 import { TREND_OPTIONS, useTrendMode, windowNote } from "../lib/trend-mode";
-import { withRollingAverage } from "@shared/rolling";
+import { weeklyTotals, withRollingAverage } from "@shared/rolling";
 
 /** The shareable no-login form link for leaders of this gathering type. */
 function LeaderLinkCard({ eventType }: { eventType: LinkReportEventType }) {
@@ -169,6 +169,38 @@ function ReportDialog({
   );
 }
 
+const isLinkReportType = (t: AttendanceEventType): t is LinkReportEventType =>
+  (LINK_REPORT_EVENT_TYPES as readonly string[]).includes(t);
+
+const weekOf = (sunday: string) => `Week of ${formatShortDay(sunday)}`;
+const reportsNote = (n: number) => `${n} group ${n === 1 ? "report" : "reports"}`;
+
+/** "Sep 20 – 26" (or "Sep 27 – Oct 3") for a Sunday-start week. */
+function weekRange(sunday: string) {
+  const start = parseDay(sunday);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const month = (d: Date) => d.toLocaleDateString(undefined, { month: "short" });
+  return `${month(start)} ${start.getDate()} – ${month(end) === month(start) ? "" : `${month(end)} `}${end.getDate()}`;
+}
+
+function ReportRow({ report: r, onEdit, onDelete }: { report: AttendanceReport; onEdit: () => void; onDelete: () => void }) {
+  return (
+    <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+      <td className="px-4 py-2 whitespace-nowrap">{formatDay(r.date, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</td>
+      <td className="px-4 py-2 text-right tabular-nums">{r.attendance}</td>
+      <td className="hidden max-w-xs truncate px-4 py-2 text-zinc-500 sm:table-cell">
+        {r.source === "leader_link" && <Badge className="mr-2">Leader</Badge>}
+        <span title={r.notes ?? undefined}>{r.notes}</span>
+      </td>
+      <td className="px-2 py-1 text-right whitespace-nowrap">
+        <IconButton label="Edit" onClick={onEdit}><Pencil className="size-4" /></IconButton>
+        <IconButton label="Delete" onClick={onDelete}><Trash2 className="size-4" /></IconButton>
+      </td>
+    </tr>
+  );
+}
+
 export function AttendancePage() {
   const [params, setParams] = useSearchParams();
   const typeParam = params.get("type") as AttendanceEventType | null;
@@ -199,13 +231,46 @@ export function AttendancePage() {
   if (isLoading) return <LoadingPage />;
   if (error) return <ErrorNotice error={error} />;
 
+  // Community groups and discipleship meetings have one report per group, so they're tallied by week.
+  const weekly = isLinkReportType(eventType);
   const chronological = [...reports].reverse();
-  const rolling = withRollingAverage(chronological.map((r) => ({ date: r.date, value: r.attendance })));
-  const latestRolling = rolling.at(-1);
+  const series = weekly
+    ? weeklyTotals(chronological).map((w) => ({ date: w.date, value: w.value, reportCount: w.reports.length }))
+    : chronological.map((r) => ({ date: r.date, value: r.attendance, reportCount: 1 }));
+  const rolling = withRollingAverage(series);
+  const latest = rolling.at(-1);
+  const unit = weekly ? "week" : "report";
   const chartPoints = rolling.map((p) =>
-    trendMode === "rolling" ? { date: p.date, value: p.rollingAverage, note: windowNote(p.windowCount) } : { date: p.date, value: p.value },
+    trendMode === "rolling"
+      ? { date: p.date, value: p.rollingAverage, note: windowNote(p.windowCount, unit), dateLabel: weekly ? weekOf(p.date) : undefined }
+      : { date: p.date, value: p.value, note: weekly ? reportsNote(p.reportCount) : undefined, dateLabel: weekly ? weekOf(p.date) : undefined },
   );
-  const high = reports.reduce<AttendanceReport | null>((best, r) => (!best || r.attendance > best.attendance ? r : best), null);
+  const best = series.reduce<(typeof series)[number] | null>((top, p) => (!top || p.value > top.value ? p : top), null);
+  const stats = !latest || !best ? [] : [
+    weekly
+      ? { label: "Latest week", value: latest.value, hint: `${weekOf(latest.date)} · ${reportsNote(latest.reportCount)}` }
+      : { label: "Most recent", value: latest.value, hint: formatDay(latest.date) },
+    {
+      label: "4-week average",
+      value: latest.rollingAverage,
+      hint: `${latest.windowCount} ${latest.windowCount === 1 ? unit : `${unit}s`} in the 4 weeks to ${formatShortDay(latest.date)}`,
+    },
+    { label: weekly ? "Best week" : "Highest", value: best.value, hint: weekly ? weekOf(best.date) : formatDay(best.date) },
+  ];
+  const weeksNewestFirst = weekly ? weeklyTotals(reports).reverse() : [];
+
+  const row = (r: AttendanceReport) => (
+    <ReportRow
+      key={r.id}
+      report={r}
+      onEdit={() => setDialog({ report: r })}
+      onDelete={async () => {
+        if (await confirm({ title: "Delete this report?", message: `${ATTENDANCE_EVENT_LABELS[r.eventType]} on ${formatDay(r.date)} (${r.attendance}).` })) {
+          del.mutate(r.id, { onSuccess: () => toast("Report deleted"), onError: (e) => toast(errorMessage(e), "error") });
+        }
+      }}
+    />
+  );
 
   return (
     <>
@@ -225,7 +290,7 @@ export function AttendancePage() {
         <Segmented label="Chart shows" value={trendMode} onChange={setTrendMode} options={TREND_OPTIONS} />
       </div>
 
-      {LINK_REPORT_EVENT_TYPES.includes(eventType as LinkReportEventType) && <LeaderLinkCard eventType={eventType as LinkReportEventType} />}
+      {isLinkReportType(eventType) && <LeaderLinkCard eventType={eventType} />}
 
       {reports.length === 0 ? (
         <Card>
@@ -238,15 +303,7 @@ export function AttendancePage() {
       ) : (
         <>
           <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: "Most recent", value: reports[0]!.attendance, hint: formatDay(reports[0]!.date) },
-              {
-                label: "4-week average",
-                value: latestRolling?.rollingAverage ?? "—",
-                hint: latestRolling ? `${latestRolling.windowCount} ${latestRolling.windowCount === 1 ? "report" : "reports"} in the 4 weeks to ${formatShortDay(latestRolling.date)}` : "",
-              },
-              { label: "Highest", value: high?.attendance ?? "—", hint: high ? formatDay(high.date) : "" },
-            ].map((s) => (
+            {stats.map((s) => (
               <Card key={s.label} className="p-4">
                 <p className="text-[13px] font-medium text-zinc-500">{s.label}</p>
                 <p className="mt-1.5 text-2xl font-semibold tabular-nums sm:text-3xl">{s.value}</p>
@@ -255,16 +312,21 @@ export function AttendancePage() {
             ))}
           </div>
 
-          {chronological.length > 1 && (
+          {series.length > 1 && (
             <Card className="mt-6">
               <CardHeader
-                title={`${ATTENDANCE_EVENT_LABELS[eventType]} over time`}
-                description={trendMode === "rolling" ? `4-week rolling average · ${chronological.length} reports` : `${chronological.length} reports`}
+                title={`${ATTENDANCE_EVENT_LABELS[eventType]} ${weekly ? "weekly totals" : "over time"}`}
+                description={[
+                  trendMode === "rolling" ? "4-week rolling average" : null,
+                  weekly ? `${series.length} weeks · ${reports.length} group reports` : `${reports.length} reports`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               />
               <div className="px-3 py-4 sm:px-5">
                 <TrendChart
                   points={chartPoints}
-                  label={`${ATTENDANCE_EVENT_LABELS[eventType]} attendance${trendMode === "rolling" ? ", 4-week rolling average" : ""}`}
+                  label={`${ATTENDANCE_EVENT_LABELS[eventType]} ${weekly ? "weekly attendance" : "attendance"}${trendMode === "rolling" ? ", 4-week rolling average" : ""}`}
                 />
               </div>
             </Card>
@@ -281,31 +343,22 @@ export function AttendancePage() {
                   <th scope="col" className="w-24 px-4 py-2.5"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {reports.map((r) => (
-                  <tr key={r.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
-                    <td className="px-4 py-2 whitespace-nowrap">{formatDay(r.date, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</td>
-                    <td className="px-4 py-2 text-right font-medium tabular-nums">{r.attendance}</td>
-                    <td className="hidden max-w-xs truncate px-4 py-2 text-zinc-500 sm:table-cell">
-                      {r.source === "leader_link" && <Badge className="mr-2">Leader</Badge>}
-                      <span title={r.notes ?? undefined}>{r.notes}</span>
-                    </td>
-                    <td className="px-2 py-1 text-right whitespace-nowrap">
-                      <IconButton label="Edit" onClick={() => setDialog({ report: r })}><Pencil className="size-4" /></IconButton>
-                      <IconButton
-                        label="Delete"
-                        onClick={async () => {
-                          if (await confirm({ title: "Delete this report?", message: `${ATTENDANCE_EVENT_LABELS[r.eventType]} on ${formatDay(r.date)} (${r.attendance}).` })) {
-                            del.mutate(r.id, { onSuccess: () => toast("Report deleted"), onError: (e) => toast(errorMessage(e), "error") });
-                          }
-                        }}
-                      >
-                        <Trash2 className="size-4" />
-                      </IconButton>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+              {weekly ? (
+                weeksNewestFirst.map((w) => (
+                  <tbody key={w.date} className="divide-y divide-zinc-100 border-t border-zinc-200 first:border-t-0 dark:divide-zinc-800 dark:border-zinc-800">
+                    <tr className="bg-zinc-50/70 dark:bg-zinc-900/60">
+                      <th scope="rowgroup" className="px-4 py-2 text-left text-[13px] font-semibold">{weekRange(w.date)}</th>
+                      <td className="px-4 py-2 text-right font-semibold tabular-nums">{w.value}</td>
+                      <td colSpan={2} className="hidden px-4 py-2 text-[13px] text-zinc-500 sm:table-cell">
+                        Week total · {reportsNote(w.reports.length)}
+                      </td>
+                    </tr>
+                    {[...w.reports].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id).map(row)}
+                  </tbody>
+                ))
+              ) : (
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">{reports.map(row)}</tbody>
+              )}
             </table>
           </Card>
         </>

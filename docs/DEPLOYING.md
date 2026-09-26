@@ -41,7 +41,9 @@ it into Postgres, preserving IDs and staff passwords (both apps use bcrypt).
 3. Deploy the new app: `kamal deploy`. This replaces the Rails container (same
    Kamal service name), which also stops it cleanly — important, because Rails
    runs SQLite in WAL mode and a clean shutdown flushes the WAL into the main file.
-4. Import: `kamal cli import-rails /legacy-rails-storage/production.sqlite3`
+4. Import. Rails left the SQLite file in WAL mode, which SQLite can't open on a
+   read-only mount, so copy it into the container's writable `/tmp` first:
+   `kamal app exec --reuse "sh -c 'cp /legacy-rails-storage/production.sqlite3 /tmp/rails.sqlite3 && node dist/server/cli.js import-rails /tmp/rails.sqlite3'"`
    It prints a count per table. It refuses to run if Postgres already has data;
    add `--replace` to wipe and re-import.
 5. Sign in at https://manage.fbcenumclaw.com with your existing email and password.
@@ -66,3 +68,12 @@ Password-reset emails need SMTP. Set `SMTP_URL` (e.g.
 `env.secret` in `config/deploy.yml` and to `.kamal/secrets`. Without SMTP the
 reset link is written to the app log (`kamal logs`). Admins can also add staff
 accounts from Settings, or run `kamal cli create-user`.
+
+## Cutover log
+
+Completed 2026-09-25. Before the cutover, a SQLite `.backup` of the Rails
+database was saved to `/root/backups/20260925-205945/` on the droplet (and to
+`~/fbc-chms-backups/` locally). The import matched production exactly: 63
+members, 11 households, 2 groups (21 memberships), 8 teams (34 memberships), 53
+attendance reports, and 1 staff account. kamal-proxy was upgraded from v0.9.0 to
+v0.9.2, and a 1 GB swap file was added (the droplet has 1 GB RAM and had no swap).

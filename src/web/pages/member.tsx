@@ -320,6 +320,7 @@ function MemberForm({ member }: { member?: MemberDetail }) {
     isChild: member?.isChild ?? false,
     notes: member?.notes ?? "",
     medicalNotes: member?.medicalNotes ?? "",
+    directoryOptOut: member?.directoryOptOut ?? false,
     familyId: member?.familyId ? String(member.familyId) : "",
   });
   const v = form.values;
@@ -428,6 +429,14 @@ function MemberForm({ member }: { member?: MemberDetail }) {
           >
             <Input placeholder="e.g. peanut allergy, inhaler in diaper bag" {...form.bind("medicalNotes")} />
           </Field>
+          <div className="mb-4">
+            <Checkbox
+              label="Leave out of the printed directory"
+              description="For people who'd rather not have their details shared with the congregation."
+              checked={v.directoryOptOut}
+              onChange={(e) => form.set("directoryOptOut", e.target.checked)}
+            />
+          </div>
           <Field label="Notes" htmlFor="notes" error={form.errors.notes} hint="Visible to all staff.">
             <Textarea rows={4} {...form.bind("notes")} />
           </Field>

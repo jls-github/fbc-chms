@@ -32,6 +32,7 @@ export function memberFields(m: MemberRow) {
     postalCode: m.postalCode,
     notes: m.notes,
     medicalNotes: m.medicalNotes,
+    directoryOptOut: m.directoryOptOut,
     familyId: m.familyId,
     createdAt: iso(m.createdAt),
     updatedAt: iso(m.updatedAt),
@@ -66,3 +67,7 @@ export const likePattern = (q: string) => `%${q.replace(/[\\%_]/g, "\\$&")}%`;
 
 /** Matches values that start with q (LIKE wildcards in q are escaped). */
 export const prefixPattern = (q: string) => `${q.replace(/[\\%_]/g, "\\$&")}%`;
+
+/** Cache-busting photo URL; the version changes whenever the photo is replaced. */
+export const familyPhotoUrl = (familyId: number, photo: { updatedAt: Date } | null | undefined) =>
+  photo ? `/api/v1/families/${familyId}/photo?v=${photo.updatedAt.getTime()}` : null;

@@ -61,15 +61,13 @@
   }
 }
 
-/* Kids check-in labels: one 4in × 2in label per page (common AirPrint label printers). */
+/* Print rules. Page size is set by each printable view with its own @page
+   (letter for the directory, 4in × 2in for kids' name tags). */
 @media print {
-  @page {
-    size: 4in 2in;
-    margin: 0;
-  }
   html,
   body {
     background: white !important;
+    color: black;
   }
   .kid-label {
     box-sizing: border-box;
@@ -81,5 +79,14 @@
     color: black;
     break-after: page;
     overflow: hidden;
+  }
+  .directory-cover {
+    break-after: page;
+  }
+  .directory-entry {
+    break-inside: avoid;
+  }
+  .directory-birthdays {
+    break-before: page;
   }
 }

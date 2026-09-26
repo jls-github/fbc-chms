@@ -11,15 +11,18 @@ import { requireAuth, SESSION_COOKIE } from "./auth/middleware";
 import { ApiError, pgErrorCode } from "./lib/errors";
 import { createRouter, type AppDeps, type AppEnv } from "./lib/router";
 import { createMiddleware } from "hono/factory";
+import { bodyLimit } from "hono/body-limit";
+import type { Context } from "hono";
 import { attendanceRoutes } from "./routes/attendance";
 import { authRoutes } from "./routes/auth";
 import { dashboardRoutes } from "./routes/dashboard";
-import { familyRoutes } from "./routes/families";
+import { familyRoutes, MAX_PHOTO_MB } from "./routes/families";
 import { groupRoutes } from "./routes/groups";
 import { memberRoutes } from "./routes/members";
 import { teamRoutes } from "./routes/teams";
 import { publicReportRoutes, reportLinkRoutes } from "./routes/report-links";
 import { kioskRoutes, rosterRoutes } from "./routes/checkin";
+import { directoryRoutes } from "./routes/directory";
 import { userRoutes } from "./routes/users";
 
 export const API_VERSION = "v1";
@@ -55,12 +58,17 @@ const limitRestrictedSessions = createMiddleware<AppEnv>(async (c, next) => {
   await next();
 });
 
+const tooLarge = (c: Context) => c.json({ error: { message: "That upload is too large." } }, 413);
+const jsonBodyLimit = bodyLimit({ maxSize: 1024 * 1024, onError: tooLarge });
+const photoBodyLimit = bodyLimit({ maxSize: (MAX_PHOTO_MB + 1) * 1024 * 1024, onError: tooLarge });
+
 export function buildApi() {
   const api = createRouter();
   api.use("*", (c, next) =>
     PUBLIC_API_PATHS.has(c.req.path) || c.req.path.startsWith(PUBLIC_PREFIX) ? next() : requireAuth(c, next),
   );
   api.use("*", limitRestrictedSessions);
+  api.use("*", (c, next) => (c.req.path.endsWith("/photo") ? photoBodyLimit(c, next) : jsonBodyLimit(c, next)));
   api
     .route("/", authRoutes)
     .route("/", dashboardRoutes)
@@ -73,7 +81,8 @@ export function buildApi() {
     .route("/", publicReportRoutes)
     .route("/", reportLinkRoutes)
     .route("/", kioskRoutes)
-    .route("/", rosterRoutes);
+    .route("/", rosterRoutes)
+    .route("/", directoryRoutes);
 
   api.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",

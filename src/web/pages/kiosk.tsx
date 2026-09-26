@@ -430,6 +430,7 @@ function PrintLabels({ result }: { result: KioskCheckinResult }) {
   const day = formatDay(result.serviceDate, { weekday: "short", month: "short", day: "numeric" });
   return (
     <div className="hidden print:block">
+      <style>{`@page { size: 4in 2in; margin: 0; }`}</style>
       {result.children.map((kid) => (
         <section key={kid.id} className="kid-label">
           <div className="flex items-start justify-between">

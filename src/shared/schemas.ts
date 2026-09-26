@@ -124,6 +124,7 @@ const memberInputShape = {
   isChild: z.boolean(),
   notes: optionalText(5000),
   medicalNotes: optionalText(2000),
+  directoryOptOut: z.boolean(),
   familyId: optionalId,
 };
 
@@ -131,6 +132,7 @@ export const MemberInput = z.object({
   ...memberInputShape,
   status: memberInputShape.status.default("guest"),
   isChild: memberInputShape.isChild.default(false),
+  directoryOptOut: memberInputShape.directoryOptOut.default(false),
 });
 export type MemberInput = z.input<typeof MemberInput>;
 
@@ -153,6 +155,7 @@ const MemberFields = {
   isChild: z.boolean(),
   notes: z.string().nullable(),
   medicalNotes: z.string().nullable(),
+  directoryOptOut: z.boolean(),
   familyId: z.number().nullable(),
   ...timestamps,
 };
@@ -202,6 +205,8 @@ export const Family = z
     id: z.number(),
     name: z.string(),
     members: z.array(PersonRef.extend({ email: z.string().nullable(), phone: z.string().nullable() })),
+    /** Same-origin URL of the household photo (requires sign-in), or null. */
+    photoUrl: z.string().nullable(),
     ...timestamps,
   })
   .meta({ id: "Family" });
@@ -457,3 +462,55 @@ export const KioskDevice = z
 export type KioskDevice = z.infer<typeof KioskDevice>;
 
 export const CreateKioskInput = z.object({ label: requiredText("Name", 60) });
+
+// ---------------------------------------------------------------------------
+// Church directory
+// ---------------------------------------------------------------------------
+
+export const DirectoryQuery = z.object({
+  /** Comma-separated member statuses to include; defaults to active,prospective. */
+  statuses: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v.split(",").map((s) => s.trim()).filter(Boolean) : ["active", "prospective"]))
+    .pipe(z.array(z.enum(MEMBER_STATUSES)).min(1, "Choose at least one status")),
+});
+
+export const DirectoryPerson = z
+  .object({
+    id: z.number(),
+    firstName: z.string(),
+    lastName: z.string(),
+    phone: z.string().nullable(),
+    email: z.string().nullable(),
+    /** "MM-DD" — the directory shows birthdays without the year. */
+    birthday: z.string().nullable(),
+  })
+  .meta({ id: "DirectoryPerson" });
+export type DirectoryPerson = z.infer<typeof DirectoryPerson>;
+
+export const DirectoryEntry = z
+  .object({
+    /** A household, or a person who isn't in one. */
+    kind: z.enum(["household", "individual"]),
+    key: z.string(),
+    householdId: z.number().nullable(),
+    /** Surname heading, e.g. "Anderson" or "Smith / Jones". */
+    title: z.string(),
+    sortName: z.string(),
+    adults: z.array(DirectoryPerson),
+    children: z.array(DirectoryPerson),
+    address: z
+      .object({ line1: z.string(), line2: z.string().nullable(), city: z.string().nullable(), state: z.string().nullable(), postalCode: z.string().nullable() })
+      .nullable(),
+    photoUrl: z.string().nullable(),
+  })
+  .meta({ id: "DirectoryEntry" });
+export type DirectoryEntry = z.infer<typeof DirectoryEntry>;
+
+export const DirectoryResponse = z.object({
+  statuses: z.array(z.enum(MEMBER_STATUSES)),
+  entries: z.array(DirectoryEntry),
+  optedOut: z.number(),
+});
+export type DirectoryResponse = z.infer<typeof DirectoryResponse>;

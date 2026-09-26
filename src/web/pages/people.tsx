@@ -1,20 +1,20 @@
 import clsx from "clsx";
-import { BookUser, LayoutGrid, Mail, Phone, Search, Table2, UserPlus, Users } from "lucide-react";
+import { LayoutGrid, Search, Table2, UserPlus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { MEMBER_STATUSES, MEMBER_STATUS_LABELS, type MemberStatus } from "@shared/constants";
 import type { MemberSummary } from "@shared/schemas";
 import { Avatar, Badge, ButtonLink, Card, EmptyState, ErrorNotice, Input, LoadingPage, PageHeader, Segmented, StatusBadge } from "../components/ui";
-import { age, fullName, pluralize } from "../lib/format";
+import { fullName, pluralize } from "../lib/format";
 import { useMembers } from "../lib/queries";
 
-type View = "table" | "cards" | "directory";
+type View = "table" | "cards";
 type StatusFilter = MemberStatus | "all";
 
 function readView(): View {
   try {
     const v = localStorage.getItem("people-view");
-    return v === "cards" || v === "directory" ? v : "table";
+    return v === "cards" ? v : "table";
   } catch {
     return "table";
   }
@@ -113,60 +113,6 @@ function PersonCard({ m }: { m: MemberSummary }) {
   );
 }
 
-function Directory({ people }: { people: MemberSummary[] }) {
-  const households = useMemo(() => {
-    const map = new Map<string, { id: number | null; name: string; people: MemberSummary[] }>();
-    for (const m of people) {
-      const key = m.family ? `f${m.family.id}` : "none";
-      if (!map.has(key)) map.set(key, { id: m.family?.id ?? null, name: m.family?.name ?? "Not in a household", people: [] });
-      map.get(key)!.people.push(m);
-    }
-    return [...map.values()].sort((a, b) => (a.id === null ? 1 : b.id === null ? -1 : a.name.localeCompare(b.name)));
-  }, [people]);
-
-  return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {households.map((h) => (
-        <Card key={h.id ?? "none"} className="p-4">
-          <div className="mb-3 flex items-baseline justify-between gap-2">
-            {h.id ? (
-              <Link to={`/households/${h.id}`} className="font-semibold text-zinc-900 hover:text-brand-700 dark:text-zinc-100 dark:hover:text-brand-300">
-                {h.name}
-              </Link>
-            ) : (
-              <span className="font-semibold text-zinc-500">{h.name}</span>
-            )}
-            <span className="text-xs text-zinc-500">{pluralize(h.people.length, "person", "people")}</span>
-          </div>
-          <ul className="space-y-3">
-            {[...h.people].sort((a, b) => Number(a.isChild) - Number(b.isChild)).map((m) => (
-              <li key={m.id} className="flex gap-3">
-                <Avatar person={m} size="sm" />
-                <div className="min-w-0 text-[13px]">
-                  <Link to={`/people/${m.id}`} className="font-medium text-zinc-900 hover:text-brand-700 dark:text-zinc-100 dark:hover:text-brand-300">
-                    {fullName(m)}
-                  </Link>
-                  {m.isChild && m.birthdate && <span className="ml-1.5 text-zinc-500">age {age(m.birthdate)}</span>}
-                  {m.phone && (
-                    <a href={`tel:${m.phone}`} className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300">
-                      <Phone className="size-3" aria-hidden /> {m.phone}
-                    </a>
-                  )}
-                  {m.email && (
-                    <a href={`mailto:${m.email}`} className="flex items-center gap-1.5 truncate text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300">
-                      <Mail className="size-3" aria-hidden /> {m.email}
-                    </a>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
 export function PeoplePage() {
   const { data: members, isLoading, error } = useMembers();
   const [params, setParams] = useSearchParams();
@@ -238,7 +184,6 @@ export function PeoplePage() {
             options={[
               { value: "table", label: <><Table2 className="size-3.5" aria-hidden />Table</> },
               { value: "cards", label: <><LayoutGrid className="size-3.5" aria-hidden />Cards</> },
-              { value: "directory", label: <><BookUser className="size-3.5" aria-hidden />Directory</> },
             ]}
           />
         </div>
@@ -257,7 +202,6 @@ export function PeoplePage() {
         <div className={clsx(view === "cards" && "grid gap-3 sm:grid-cols-2 xl:grid-cols-3")}>
           {view === "table" && <PeopleTable people={visible} />}
           {view === "cards" && visible.map((m) => <PersonCard key={m.id} m={m} />)}
-          {view === "directory" && <Directory people={visible} />}
         </div>
       )}
     </>

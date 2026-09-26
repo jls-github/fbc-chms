@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  customType,
   date,
   index,
   integer,
@@ -12,6 +13,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, MEMBER_STATUSES, SESSION_KINDS, USER_ROLES } from "@shared/constants";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -35,6 +38,20 @@ export const families = pgTable("families", {
   ...timestamps,
 });
 
+/**
+ * One photo per household, for the church directory. Stored in Postgres so the
+ * regular database backups include them; images are resized in the browser
+ * before upload, so each is typically 100–300 KB.
+ */
+export const familyPhotos = pgTable("family_photos", {
+  familyId: integer("family_id")
+    .primaryKey()
+    .references(() => families.id, { onDelete: "cascade" }),
+  contentType: text("content_type").notNull(),
+  data: bytea("data").notNull(),
+  ...timestamps,
+});
+
 export const members = pgTable(
   "members",
   {
@@ -54,6 +71,8 @@ export const members = pgTable(
     notes: text("notes"),
     /** Allergies, medications, special needs — shown to check-in volunteers and on kids' name tags. */
     medicalNotes: text("medical_notes"),
+    /** Leave this person out of the printed church directory. */
+    directoryOptOut: boolean("directory_opt_out").notNull().default(false),
     familyId: integer("family_id").references(() => families.id, { onDelete: "set null" }),
     ...timestamps,
   },
@@ -243,7 +262,10 @@ export const passwordResets = pgTable(
 // Relations (used by the relational query builder)
 // ---------------------------------------------------------------------------
 
-export const familiesRelations = relations(families, ({ many }) => ({ members: many(members) }));
+export const familiesRelations = relations(families, ({ many, one }) => ({
+  members: many(members),
+  photo: one(familyPhotos, { fields: [families.id], references: [familyPhotos.familyId] }),
+}));
 
 export const membersRelations = relations(members, ({ one, many }) => ({
   family: one(families, { fields: [members.familyId], references: [families.id] }),

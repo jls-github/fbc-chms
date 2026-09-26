@@ -6,12 +6,9 @@ import { AppLayout } from "./components/layout";
 import { ConfirmProvider, EmptyState, ToastProvider } from "./components/ui";
 import { ApiError, setUnauthorizedHandler } from "./lib/api";
 import { AttendancePage } from "./pages/attendance";
-import { CheckinPage } from "./pages/checkin";
-import { KioskPage } from "./pages/kiosk";
 import { ForgotPasswordPage, LoginPage, ResetPasswordPage } from "./pages/auth";
 import { DashboardPage } from "./pages/dashboard";
 import { HouseholdPage, HouseholdsPage } from "./pages/households";
-import { LeaderReportPage } from "./pages/leader-report";
 import { MemberFormPage, MemberPage } from "./pages/member";
 import { GroupPage, GroupsPage, TeamPage, TeamsPage } from "./pages/ministry";
 import { PeoplePage } from "./pages/people";
@@ -45,8 +42,10 @@ const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
-  { path: "/r/:token", element: <LeaderReportPage /> },
-  { path: "/kiosk", element: <KioskPage /> },
+  // Standalone screens load on demand so the main app bundle stays small.
+  { path: "/r/:token", lazy: () => import("./pages/leader-report").then((m) => ({ Component: m.LeaderReportPage })) },
+  { path: "/kiosk", lazy: () => import("./pages/kiosk").then((m) => ({ Component: m.KioskPage })) },
+  { path: "/directory/print", lazy: () => import("./pages/directory").then((m) => ({ Component: m.DirectoryPrintPage })) },
   {
     element: <AppLayout />,
     children: [
@@ -57,12 +56,13 @@ const router = createBrowserRouter([
       { path: "people/:id/edit", element: <MemberFormPage /> },
       { path: "households", element: <HouseholdsPage /> },
       { path: "households/:id", element: <HouseholdPage /> },
+      { path: "directory", lazy: () => import("./pages/directory").then((m) => ({ Component: m.DirectoryPage })) },
       { path: "groups", element: <GroupsPage /> },
       { path: "groups/:id", element: <GroupPage /> },
       { path: "teams", element: <TeamsPage /> },
       { path: "teams/:id", element: <TeamPage /> },
       { path: "attendance", element: <AttendancePage /> },
-      { path: "checkin", element: <CheckinPage /> },
+      { path: "checkin", lazy: () => import("./pages/checkin").then((m) => ({ Component: m.CheckinPage })) },
       { path: "settings", element: <SettingsPage /> },
       { path: "*", element: <NotFound /> },
     ],

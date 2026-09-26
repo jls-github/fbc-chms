@@ -25,6 +25,7 @@ import {
 } from "../components/ui";
 import { errorMessage } from "../lib/api";
 import { useForm } from "../lib/form";
+import { FamilyPhotoEditor } from "../components/family-photo";
 import { age, fullName, pluralize } from "../lib/format";
 import { useDeleteFamily, useFamilies, useFamily, useMembers, useSaveFamily } from "../lib/queries";
 
@@ -171,6 +172,14 @@ export function HouseholdPage() {
           </>
         }
       />
+
+      <Card className="mb-6 overflow-hidden">
+        <FamilyPhotoEditor familyId={family.id} photoUrl={family.photoUrl} title={family.name.replace(/^The | Family$/g, "")} className="aspect-[16/9] max-h-80 w-full" />
+        <p className="px-5 py-3 text-[13px] text-zinc-500">
+          Used in the printed church directory.{" "}
+          <Link to="/directory" className="font-medium text-brand-700 hover:underline dark:text-brand-300">View directory</Link>
+        </p>
+      </Card>
 
       <Card>
         <CardHeader title="Members" description="Adults are listed first" />

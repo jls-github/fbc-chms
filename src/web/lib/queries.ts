@@ -4,6 +4,7 @@ import type {
   AttendanceInput,
   AttendanceReport,
   Dashboard,
+  DirectoryResponse,
   Family,
   Group,
   MemberDetail,
@@ -16,6 +17,7 @@ import type {
   Team,
 } from "@shared/schemas";
 import { api } from "./api";
+import { uploadFamilyPhoto } from "./photo";
 
 export type User = { id: number; email: string; name: string | null; role: UserRole; createdAt: string };
 
@@ -315,4 +317,23 @@ export function useDeleteKiosk() {
     mutationFn: (id: number) => api.delete(`/checkin/kiosks/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["kiosks"] }),
   });
+}
+
+// ---------------------------------------------------------------- directory
+
+export const useDirectory = (statuses: MemberStatus[]) =>
+  useQuery({
+    queryKey: ["directory", [...statuses].sort().join(",")],
+    queryFn: () => api.get<DirectoryResponse>(`/directory?statuses=${statuses.join(",")}`),
+    placeholderData: keepPreviousData,
+  });
+
+const PHOTO_KEYS = [["directory"], ["families"], ["family"]];
+
+export function useFamilyPhoto(familyId: number) {
+  const invalidate = useInvalidate();
+  return {
+    upload: useMutation({ mutationFn: (file: File) => uploadFamilyPhoto(familyId, file), onSuccess: () => invalidate(PHOTO_KEYS) }),
+    remove: useMutation({ mutationFn: () => api.delete(`/families/${familyId}/photo`), onSuccess: () => invalidate(PHOTO_KEYS) }),
+  };
 }

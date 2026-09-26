@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import {
   Baby,
+  BookUser,
   ChartColumn,
   Church,
   House,
@@ -27,6 +28,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/people", label: "People", icon: Users },
   { to: "/households", label: "Households", icon: House },
+  { to: "/directory", label: "Directory", icon: BookUser },
   { to: "/groups", label: "Groups", icon: UsersRound },
   { to: "/teams", label: "Teams", icon: HandHeart },
   { to: "/attendance", label: "Attendance", icon: ChartColumn },

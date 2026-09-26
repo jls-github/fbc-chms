@@ -5,7 +5,7 @@ import type { MyProfile } from "@shared/schemas";
 import { Button, Card, confirm, FormError, Loading, TextField } from "../../../components/ui";
 import { api, errorMessage, fieldError } from "../../../lib/api";
 import { useAuth, useMe, type Me } from "../../../lib/auth";
-import { useTheme } from "../../../lib/theme";
+import { fonts, useTheme } from "../../../lib/theme";
 
 type Member = NonNullable<MyProfile["member"]>;
 type PrivacyKey = "dirShowPhone" | "dirShowEmail" | "dirShowAddress" | "dirShowBirthday" | "directoryOptOut";
@@ -33,7 +33,7 @@ function Toggle({ label, detail, value, onChange, disabled }: { label: string; d
         value={value}
         onValueChange={onChange}
         disabled={disabled}
-        trackColor={{ true: t.brand, false: t.border }}
+        trackColor={{ true: t.brandFill, false: t.border }}
         thumbColor={Platform.OS === "android" && !value ? "#f4f4f5" : "#ffffff"}
         // react-native-web colors the "on" knob separately.
         {...(Platform.OS === "web" ? ({ activeThumbColor: "#ffffff" } as object) : {})}
@@ -91,7 +91,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
       <View style={{ gap: 2 }}>
-        <Text style={{ color: t.text, fontSize: 26, fontWeight: "700" }}>
+        <Text style={{ color: t.text, fontSize: 26, fontFamily: fonts.heading }}>
           {member.firstName} {member.lastName}
         </Text>
         {member.householdName && <Text style={{ color: t.muted, fontSize: 15 }}>{member.householdName}</Text>}

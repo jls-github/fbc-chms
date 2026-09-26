@@ -201,7 +201,7 @@ export default function GroupChat() {
             disabled={!draft.trim() || sending}
             accessibilityRole="button"
             accessibilityLabel="Send"
-            style={[styles.send, { backgroundColor: draft.trim() ? t.brand : t.border }]}
+            style={[styles.send, { backgroundColor: draft.trim() ? t.brandFill : t.border }]}
           >
             {sending ? <ActivityIndicator color="#fff" /> : <Ionicons name="arrow-up" size={20} color="#fff" />}
           </Pressable>

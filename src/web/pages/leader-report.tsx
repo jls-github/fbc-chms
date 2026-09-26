@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { CircleCheck, Church, LinkIcon } from "lucide-react";
+import { CircleCheck, LinkIcon } from "lucide-react";
+import { ColorBlocks, Logo } from "../components/brand";
 import { useState } from "react";
 import { useParams } from "react-router";
 import { Button, ErrorNotice, Field, Input, Textarea } from "../components/ui";
@@ -9,15 +10,15 @@ import { formatDay, todayIso } from "../lib/format";
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-brand-50 to-zinc-50 px-4 py-8 sm:py-14 dark:from-zinc-900 dark:to-zinc-950">
-      <div className="mx-auto w-full max-w-md">
-        <div className="mb-5 flex items-center justify-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm">
-            <Church className="size-[18px]" aria-hidden />
-          </span>
-          <span className="text-sm font-semibold text-zinc-900 dark:text-white">FBC Enumclaw</span>
+    <div className="relative min-h-screen px-4 py-8 sm:py-14">
+      <ColorBlocks className="absolute inset-x-0 top-0 h-48 sm:h-64" />
+      <div className="relative mx-auto w-full max-w-md">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mb-5 flex justify-center">
+            <Logo className="h-11" />
+          </div>
+          {children}
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">{children}</div>
       </div>
     </div>
   );

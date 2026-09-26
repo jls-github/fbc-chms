@@ -13,6 +13,7 @@ import { MemberFormPage, MemberPage } from "./pages/member";
 import { GroupPage, GroupsPage, TeamPage, TeamsPage } from "./pages/ministry";
 import { PeoplePage } from "./pages/people";
 import { SettingsPage } from "./pages/settings";
+import "@fontsource-variable/figtree";
 import "./styles.css";
 
 const queryClient = new QueryClient({

@@ -4,7 +4,7 @@ import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from
 import { Card, EmptyState, Loading, Photo, type IconName } from "../../../components/ui";
 import { adultNames, childName, formatAddress, useDirectory } from "../../../lib/directory";
 import { birthday } from "../../../lib/format";
-import { useTheme } from "../../../lib/theme";
+import { fonts, useTheme } from "../../../lib/theme";
 
 function Action({ icon, label, detail, url }: { icon: IconName; label: string; detail?: string; url: string }) {
   const t = useTheme();
@@ -111,7 +111,7 @@ export default function DirectoryEntryScreen() {
 }
 
 const styles = StyleSheet.create({
-  h1: { fontSize: 26, fontWeight: "700" },
+  h1: { fontSize: 26, fontFamily: fonts.heading },
   h2: { fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6, opacity: 0.7 },
   action: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8, minHeight: 48 },
   actionIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },

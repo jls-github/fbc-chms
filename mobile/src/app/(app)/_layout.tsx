@@ -3,7 +3,7 @@ import { Redirect, Stack } from "expo-router";
 import { Text, View } from "react-native";
 import { Button, Centered, ErrorView, Loading } from "../../components/ui";
 import { useAuth, useMe } from "../../lib/auth";
-import { useTheme } from "../../lib/theme";
+import { fonts, useTheme } from "../../lib/theme";
 
 function Waiting({ title, body }: { title: string; body: string }) {
   const { signOut } = useAuth();
@@ -15,7 +15,7 @@ function Waiting({ title, body }: { title: string; body: string }) {
         <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: t.brandSoft, alignItems: "center", justifyContent: "center" }}>
           <Ionicons name="hourglass-outline" size={30} color={t.brand} />
         </View>
-        <Text style={{ fontSize: 22, fontWeight: "700", color: t.text, textAlign: "center" }}>{title}</Text>
+        <Text style={{ fontSize: 22, fontFamily: fonts.heading, color: t.text, textAlign: "center" }}>{title}</Text>
         <Text style={{ fontSize: 16, color: t.muted, textAlign: "center", lineHeight: 23 }}>{body}</Text>
         <View style={{ gap: 10, alignSelf: "stretch", marginTop: 8 }}>
           <Button title="Check again" icon="refresh" onPress={() => void me.refetch()} loading={me.isFetching} />

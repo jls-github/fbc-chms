@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useGroups } from "../../../lib/queries";
-import { useTheme } from "../../../lib/theme";
+import { fonts, useTheme } from "../../../lib/theme";
 
 export default function TabsLayout() {
   const t = useTheme();
@@ -14,7 +14,8 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: t.muted,
         tabBarStyle: { backgroundColor: t.card, borderTopColor: t.border },
         headerStyle: { backgroundColor: t.card },
-        headerTitleStyle: { color: t.text, fontWeight: "700" },
+        headerTitleStyle: { color: t.text, fontFamily: fonts.heading },
+        tabBarBadgeStyle: { backgroundColor: t.accent, color: "#fff" },
         headerShadowVisible: false,
         sceneStyle: { backgroundColor: t.bg },
       }}

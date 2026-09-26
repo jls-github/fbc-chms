@@ -10,7 +10,7 @@ import { useMe } from "../../../lib/auth";
 import { useDirectory } from "../../../lib/directory";
 import { longDate } from "../../../lib/format";
 import { useGroups, useSermons } from "../../../lib/queries";
-import { useTheme } from "../../../lib/theme";
+import { fonts, useTheme } from "../../../lib/theme";
 
 function greeting() {
   const h = new Date().getHours();
@@ -45,7 +45,7 @@ function Tile({
           <Ionicons name={icon} size={24} color={t.brand} />
         </View>
         {!!badge && (
-          <View style={[styles.badge, { backgroundColor: t.brand }]}>
+          <View style={[styles.badge, { backgroundColor: t.accent }]}>
             <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
           </View>
         )}
@@ -102,9 +102,18 @@ export default function HomeScreen() {
           />
         }
       >
-        <View style={{ gap: 2 }}>
-          <Text style={{ color: t.muted, fontSize: 15 }}>FBC Enumclaw</Text>
-          <Text style={[styles.hello, { color: t.text }]}>
+        {/* Brand "color blocks" banner with the reversed logo, per the brand guide. */}
+        <View style={styles.banner}>
+          <Image source={require("../../../../assets/brand/color-blocks.jpg")} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(20,28,27,0.38)" }]} />
+          <Image
+            source={require("../../../../assets/brand/logo-alt-white.png")}
+            style={styles.bannerLogo}
+            contentFit="contain"
+            contentPosition="left"
+            accessibilityLabel="First Baptist Church"
+          />
+          <Text style={styles.hello}>
             {greeting()}
             {member ? `, ${member.firstName}` : ""}
           </Text>
@@ -170,7 +179,9 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scroll: { padding: 16, gap: 18, paddingBottom: 32, maxWidth: 820, width: "100%", alignSelf: "center" },
-  hello: { fontSize: 28, fontWeight: "700", letterSpacing: -0.4 },
+  banner: { borderRadius: 20, overflow: "hidden", padding: 18, paddingTop: 16, gap: 18, minHeight: 150, justifyContent: "space-between" },
+  bannerLogo: { width: 190, height: 50 },
+  hello: { fontSize: 26, fontFamily: fonts.heading, color: "#ffffff", letterSpacing: -0.2 },
   sermon: { borderRadius: 18, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth },
   sermonImage: { width: "100%", aspectRatio: 16 / 9 },
   play: {
@@ -188,7 +199,7 @@ const styles = StyleSheet.create({
   tile: { minHeight: 132, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, padding: 14, gap: 6 },
   tileTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 },
   tileIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  tileTitle: { fontSize: 17, fontWeight: "700" },
+  tileTitle: { fontSize: 17, fontFamily: fonts.heading },
   badge: { minWidth: 24, height: 24, borderRadius: 12, paddingHorizontal: 7, alignItems: "center", justifyContent: "center" },
   badgeText: { color: "#fff", fontSize: 12, fontWeight: "700" },
 });

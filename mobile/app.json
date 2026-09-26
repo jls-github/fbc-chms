@@ -25,8 +25,9 @@
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "name": "FBC Enumclaw",
-      "shortName": "FBC"
+      "name": "First Baptist Church",
+      "shortName": "FBC",
+      "themeColor": "#40605f"
     },
     "plugins": [
       "expo-router",

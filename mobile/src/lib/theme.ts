@@ -1,40 +1,53 @@
 import { useColorScheme } from "react-native";
 
+/**
+ * FBC brand guide v1.0: Grow in Grace teal (#40605f / #8bada6) leads, with
+ * the guide's light background. `brand` is for text and icons (lighter in
+ * dark mode so it stays readable); `brandFill` is for buttons and badges,
+ * which carry white text.
+ */
 const light = {
-  bg: "#f7f7f8",
+  bg: "#eef3f2",
   card: "#ffffff",
-  text: "#18181b",
-  muted: "#71717a",
-  faint: "#a1a1aa",
-  border: "#e4e4e7",
-  brand: "#3f55d6",
+  text: "#1c1f1f",
+  muted: "#58595b",
+  faint: "#8a8d8f",
+  border: "#dde4e3",
+  brand: "#40605f",
+  brandFill: "#40605f",
   brandText: "#ffffff",
-  brandSoft: "#eef1ff",
-  danger: "#dc2626",
-  dangerSoft: "#fef2f2",
-  mine: "#3f55d6",
+  brandSoft: "#dfe9e7",
+  accent: "#bb5e2d",
+  danger: "#b42318",
+  dangerSoft: "#fdecea",
+  mine: "#40605f",
   mineText: "#ffffff",
   theirs: "#ffffff",
-  success: "#059669",
+  success: "#4f6f2a",
 };
 
 const dark: typeof light = {
-  bg: "#0c0c0e",
-  card: "#18181b",
-  text: "#f4f4f5",
-  muted: "#a1a1aa",
-  faint: "#71717a",
-  border: "#27272a",
-  brand: "#6b7ff0",
+  bg: "#0f1413",
+  card: "#171f1e",
+  text: "#f1f4f3",
+  muted: "#a3adab",
+  faint: "#76807e",
+  border: "#26302f",
+  brand: "#8bada6",
+  brandFill: "#40605f",
   brandText: "#ffffff",
-  brandSoft: "#1e2240",
-  danger: "#f87171",
-  dangerSoft: "#2a1414",
-  mine: "#4f63e0",
+  brandSoft: "#1d2a29",
+  accent: "#d9814f",
+  danger: "#f97066",
+  dangerSoft: "#2a1614",
+  mine: "#40605f",
   mineText: "#ffffff",
-  theirs: "#27272a",
-  success: "#34d399",
+  theirs: "#232c2b",
+  success: "#a8a44f",
 };
 
 export type Theme = typeof light;
 export const useTheme = (): Theme => (useColorScheme() === "dark" ? dark : light);
+
+/** Headline font (Figtree, the free stand-in for the brand's Filson Pro). Loaded in the root layout. */
+export const fonts = { heading: "Figtree_700Bold", headingSemi: "Figtree_600SemiBold" };

@@ -42,7 +42,7 @@ export function Button({
 }) {
   const t = useTheme();
   const colors = {
-    primary: { bg: t.brand, fg: t.brandText, border: t.brand },
+    primary: { bg: t.brandFill, fg: t.brandText, border: t.brandFill },
     secondary: { bg: t.card, fg: t.text, border: t.border },
     ghost: { bg: "transparent", fg: t.brand, border: "transparent" },
     danger: { bg: t.card, fg: t.danger, border: t.border },

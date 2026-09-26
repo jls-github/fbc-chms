@@ -23,6 +23,7 @@
     "build:app": "cd mobile && npx expo export --platform web --output-dir ../dist/member-app"
   },
   "dependencies": {
+    "@fontsource-variable/figtree": "^5.3.0",
     "@hono/node-server": "^2.1.1",
     "@hono/swagger-ui": "^0.6.1",
     "@hono/zod-openapi": "^1.6.3",

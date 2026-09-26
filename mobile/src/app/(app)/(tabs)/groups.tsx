@@ -40,7 +40,7 @@ export default function GroupsScreen() {
                 {item.lastMessage ? `${item.lastMessage.authorName}: ${item.lastMessage.body}` : `${item.memberCount} members · say hello!`}
               </Text>
               {item.unread > 0 && (
-                <View style={[styles.badge, { backgroundColor: t.brand }]}>
+                <View style={[styles.badge, { backgroundColor: t.accent }]}>
                   <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>{item.unread > 99 ? "99+" : item.unread}</Text>
                 </View>
               )}

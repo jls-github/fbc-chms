@@ -5,7 +5,7 @@ import { SermonPlayer } from "../../../components/sermon-player";
 import { Button, EmptyState, ErrorView, Loading, Photo } from "../../../components/ui";
 import { longDate } from "../../../lib/format";
 import { useSermons } from "../../../lib/queries";
-import { useTheme } from "../../../lib/theme";
+import { fonts, useTheme } from "../../../lib/theme";
 import { router } from "expo-router";
 
 export default function SermonScreen() {
@@ -59,7 +59,7 @@ export default function SermonScreen() {
 const styles = StyleSheet.create({
   scroll: { padding: 16, gap: 18, paddingBottom: 40, maxWidth: 820, width: "100%", alignSelf: "center" },
   eyebrow: { fontSize: 12, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6 },
-  title: { fontSize: 24, fontWeight: "700", letterSpacing: -0.3 },
+  title: { fontSize: 24, fontFamily: fonts.heading, letterSpacing: -0.2 },
   section: { fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6 },
   row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 10, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth },
 });

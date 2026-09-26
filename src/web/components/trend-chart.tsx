@@ -6,7 +6,7 @@ type Point = { date: string; value: number; note?: string; dateLabel?: string };
 /**
  * Single-series line chart for change over time. The series colour is
  * validated for contrast against both surfaces (see the dataviz guidance):
- * light #3f55d6, dark #6b7ff0. Single series → no legend; the card title names it.
+ * brand teal — light #40605f, dark #6f978f. Single series → no legend; the card title names it.
  */
 export function TrendChart({ points, label, height = 220 }: { points: Point[]; label: string; height?: number }) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -55,7 +55,7 @@ export function TrendChart({ points, label, height = 220 }: { points: Point[]; l
   };
 
   return (
-    <div ref={wrap} className="relative text-zinc-400 dark:text-zinc-500 [--series:#3f55d6] dark:[--series:#6b7ff0]">
+    <div ref={wrap} className="relative text-zinc-400 dark:text-zinc-500 [--series:#40605f] dark:[--series:#6f978f]">
       <svg
         width={width}
         height={height}

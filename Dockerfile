@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1
 
 FROM node:22-slim AS build
+# esbuild's Go runtime can crash ("concurrent map writes") under QEMU when an
+# amd64 image is built on an Apple Silicon Mac; one thread keeps it reliable.
+ENV GOMAXPROCS=1
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci

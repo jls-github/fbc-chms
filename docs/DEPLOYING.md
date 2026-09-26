@@ -8,12 +8,14 @@ as a Kamal accessory on the same droplet.
 ## Prerequisites (once, on your machine)
 
 ```bash
-gem install kamal              # or use the ghcr.io/basecamp/kamal Docker image
-export KAMAL_REGISTRY_PASSWORD=...   # Docker Hub access token for `jlsjls`
-export POSTGRES_PASSWORD=...         # generate once: openssl rand -hex 32 — store it in your password manager
+gem install kamal    # needs Ruby >= 3.1; Kamal >= 2.8
 ```
 
-`.kamal/secrets` only reads these environment variables; nothing secret is committed.
+- SSH access to the droplet uses the `~/.ssh/fbc` key (set in `config/deploy.yml`).
+- Images go to the droplet through Kamal's SSH-tunneled local registry, so no Docker Hub token is needed.
+- The Postgres password lives in `~/.config/fbc-chms/deploy.env` (`POSTGRES_PASSWORD=...`, chmod 600).
+  **Keep a copy in your password manager** — it's needed for every deploy.
+  `.kamal/secrets` reads it from there; nothing secret is committed.
 
 ## Routine deploys
 

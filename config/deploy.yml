@@ -1,8 +1,8 @@
 # Kamal 2 deployment to the DigitalOcean droplet.
-# Usage: see docs/DEPLOYING.md. Requires `gem install kamal` (or the kamal Docker image).
+# Usage: see docs/DEPLOYING.md. Requires Kamal >= 2.8 (`gem install kamal`).
 
 service: fbc_chms
-image: jlsjls/fbc-chms
+image: fbc-chms
 
 servers:
   web:
@@ -17,10 +17,15 @@ proxy:
     interval: 3
     timeout: 5
 
+# Kamal's local registry: images are pushed to the droplet over an SSH tunnel,
+# so no Docker Hub account or token is needed.
 registry:
-  username: jlsjls
-  password:
-    - KAMAL_REGISTRY_PASSWORD
+  server: localhost:5555
+
+ssh:
+  user: root
+  keys: ["~/.ssh/fbc"]
+  keys_only: true
 
 builder:
   arch: amd64

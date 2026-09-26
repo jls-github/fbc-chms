@@ -376,5 +376,10 @@ export function useAppAccountActions() {
       ...done,
     }),
     invite: useMutation({ mutationFn: (memberId: number) => api.post<InviteResponse>(`/members/${memberId}/app-invite`), ...done }),
+    /** Link any login (e.g. a staff login) to a person, or unlink it with memberId: null. */
+    link: useMutation({
+      mutationFn: ({ id, memberId }: { id: number; memberId: number | null }) => api.post(`/app-accounts/${id}/link`, { memberId }),
+      onSuccess: () => invalidate([...ACCOUNT_KEYS, ["users"], ["me"]]),
+    }),
   };
 }

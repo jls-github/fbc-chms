@@ -1,5 +1,7 @@
 import { createRoute } from "@hono/zod-openapi";
-import { and, eq, ilike, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, eq, ilike, inArray, isNull, ne, or, sql, type SQL } from "drizzle-orm";
+import { STAFF_ROLES } from "@shared/constants";
+import { normalizePhone } from "@shared/phone";
 import { z } from "zod";
 import { IdParam, MemberDetail, MemberInput, MemberListQuery, MemberPatch, MemberSummary } from "@shared/schemas";
 import type { Db } from "../db/client";
@@ -35,12 +37,30 @@ async function loadDetail(db: Db, id: number) {
       })
     : [];
   const [account] = await db.select().from(users).where(eq(users.memberId, member.id));
+  const email = member.email?.trim().toLowerCase();
+  const phone = normalizePhone(member.phone);
+  const [staffLogin] =
+    !account && (email || phone) && !member.isChild
+      ? await db
+          .select()
+          .from(users)
+          .where(
+            and(
+              isNull(users.memberId),
+              inArray(users.role, [...STAFF_ROLES]),
+              or(email ? eq(sql`lower(${users.email})`, email) : sql`false`, phone ? eq(users.phone, phone) : sql`false`),
+            ),
+          )
+          .limit(1)
+      : [];
   return {
     ...memberSummary(member),
     household: household.map(personRef).sort(byName),
+    linkableStaffLogin: staffLogin ? { id: staffLogin.id, email: staffLogin.email, role: staffLogin.role } : null,
     appAccount: account
       ? {
           id: account.id,
+          role: account.role,
           status: account.status,
           email: account.email,
           phone: account.phone,

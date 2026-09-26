@@ -49,7 +49,7 @@ export default function AppLayout() {
     return (
       <Waiting
         title="Almost there"
-        body="Your account isn't linked to anyone in the church directory yet. Please contact the church office and they'll get you connected."
+        body="Your sign-in isn't linked to your entry in the church directory yet. Church staff can link it from your profile in the staff site (Member app → Link their staff login) or under Settings → Staff accounts."
       />
     );
   }

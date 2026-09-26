@@ -140,6 +140,25 @@ describe("self sign-up and staff approval", () => {
     expect(clash.status).toBe(409);
   });
 
+  it("offers to link a matching staff login instead of inviting (which would clash)", async () => {
+    const pastor = await person("Office", "Admin", { email: "Office@Test.org" });
+    const detail = (await staff.get(`/members/${pastor.id}`)).json.member;
+    expect(detail.appAccount).toBeNull();
+    expect(detail.linkableStaffLogin).toMatchObject({ email: "office@test.org", role: "admin" });
+    expect((await staff.post(`/members/${pastor.id}/app-invite`)).status).toBe(409);
+
+    await staff.post(`/app-accounts/${detail.linkableStaffLogin.id}/link`, { memberId: pastor.id });
+    const after = (await staff.get(`/members/${pastor.id}`)).json.member;
+    expect(after.linkableStaffLogin).toBeNull();
+    expect(after.appAccount).toMatchObject({ role: "admin", status: "active", email: "office@test.org" });
+    expect((await staff.get("/users")).json.users.find((u: { email: string }) => u.email === "office@test.org").memberId).toBe(pastor.id);
+    expect((await staff.get("/app/me")).json.profile.member.id).toBe(pastor.id);
+
+    // Unlinking a staff login is allowed (member-app accounts must stay linked).
+    expect((await staff.post(`/app-accounts/${detail.linkableStaffLogin.id}/link`, { memberId: null })).status).toBe(200);
+    expect((await staff.get("/app/directory")).status).toBe(403);
+  });
+
   it("links a staff login to a person so staff can use the app too", async () => {
     const pastor = await person("Paul", "Tarsus");
     const [me] = await ctx.db.select().from(users).where(eq(users.email, "office@test.org"));

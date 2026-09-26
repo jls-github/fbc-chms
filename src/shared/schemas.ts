@@ -211,12 +211,18 @@ export const MemberDetail = MemberSummary.extend({
   appAccount: z
     .object({
       id: z.number(),
+      role: z.enum(USER_ROLES),
       status: z.enum(USER_STATUSES),
       email: z.string().nullable(),
       phone: z.string().nullable(),
       inviteExpiresAt: z.string().nullable(),
     })
     .nullable(),
+  /**
+   * An unlinked staff login using this person's email or phone. Link it rather
+   * than inviting them (an invitation would clash with that login).
+   */
+  linkableStaffLogin: z.object({ id: z.number(), email: z.string().nullable(), role: z.enum(USER_ROLES) }).nullable(),
 }).meta({ id: "MemberDetail" });
 export type MemberDetail = z.infer<typeof MemberDetail>;
 

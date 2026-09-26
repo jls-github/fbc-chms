@@ -123,9 +123,10 @@ export function openApiDocument(api: ReturnType<typeof buildApi>) {
   });
 }
 
-const csp = (imgSrc: string) => [
+const csp = (imgSrc: string, frameSrc = "'none'") => [
   "default-src 'self'",
   `img-src ${imgSrc}`,
+  `frame-src ${frameSrc}`,
   "style-src 'self' 'unsafe-inline'",
   "script-src 'self'",
   "connect-src 'self'",
@@ -136,8 +137,8 @@ const csp = (imgSrc: string) => [
 ].join("; ");
 
 const CSP = csp("'self' data:");
-/** The member app also shows sermon artwork hosted by Subsplash. */
-const MEMBER_APP_CSP = csp("'self' data: blob: https://images.subsplash.com");
+/** The member app also shows sermon artwork and embeds the sermon player, both hosted by Subsplash. */
+const MEMBER_APP_CSP = csp("'self' data: blob: https://images.subsplash.com", "https://subsplash.com https://*.subsplash.com");
 
 export function createApp(deps: AppDeps, opts: { staticDir?: string; memberAppDir?: string; log?: boolean } = {}) {
   const app = new Hono<AppEnv>();

@@ -1,26 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import * as WebBrowser from "expo-web-browser";
+import { router } from "expo-router";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import type { Sermon } from "@shared/schemas";
 import { EmptyState, ErrorView, Loading } from "../../../components/ui";
-import { api } from "../../../lib/api";
+import { useSermons } from "../../../lib/queries";
 import { longDate } from "../../../lib/format";
 import { useTheme } from "../../../lib/theme";
 
 export default function SermonsScreen() {
   const t = useTheme();
-  const { data, isLoading, error, refetch, isRefetching } = useQuery({
-    queryKey: ["sermons"],
-    queryFn: () => api.get<{ sermons: Sermon[]; stale: boolean }>("/app/sermons"),
-    staleTime: 10 * 60_000,
-  });
+  const { data, isLoading, error, refetch, isRefetching } = useSermons();
   if (isLoading) return <Loading />;
   if (error) return <ErrorView error={error} onRetry={() => void refetch()} />;
   const [latest, ...rest] = data?.sermons ?? [];
 
-  const open = (s: Sermon) => void WebBrowser.openBrowserAsync(s.url, { toolbarColor: t.card, controlsColor: t.brand });
+  const open = (s: Sermon) => router.push({ pathname: "/sermons/[id]", params: { id: s.id } });
 
   return (
     <FlatList
@@ -31,7 +26,7 @@ export default function SermonsScreen() {
       ListEmptyComponent={latest ? null : <EmptyState icon="play-circle-outline" title="No sermons yet" />}
       ListHeaderComponent={
         latest ? (
-          <Pressable onPress={() => open(latest)} style={[styles.hero, { backgroundColor: t.card, borderColor: t.border }]} accessibilityRole="link" accessibilityLabel={`Latest sermon: ${latest.title}`}>
+          <Pressable onPress={() => open(latest)} style={[styles.hero, { backgroundColor: t.card, borderColor: t.border }]} accessibilityRole="button" accessibilityLabel={`Play the latest sermon: ${latest.title}`}>
             <View>
               <Image source={latest.imageUrl ? { uri: latest.imageUrl } : undefined} style={styles.heroImage} contentFit="cover" transition={200} />
               <View style={styles.play}>
@@ -52,7 +47,7 @@ export default function SermonsScreen() {
         data?.stale ? <Text style={{ color: t.muted, textAlign: "center", fontSize: 13 }}>Showing saved sermons — the church website isn't responding right now.</Text> : null
       }
       renderItem={({ item }) => (
-        <Pressable onPress={() => open(item)} style={({ pressed }) => [styles.row, { backgroundColor: t.card, borderColor: t.border, opacity: pressed ? 0.7 : 1 }]} accessibilityRole="link">
+        <Pressable onPress={() => open(item)} style={({ pressed }) => [styles.row, { backgroundColor: t.card, borderColor: t.border, opacity: pressed ? 0.7 : 1 }]} accessibilityRole="button" accessibilityLabel={`Play ${item.title}`}>
           <Image source={item.imageUrl ? { uri: item.imageUrl } : undefined} style={styles.thumb} contentFit="cover" transition={200} />
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ color: t.text, fontSize: 16, fontWeight: "600" }} numberOfLines={2}>{item.title}</Text>

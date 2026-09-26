@@ -121,6 +121,16 @@ describe("staff accounts", () => {
 });
 
 describe("app shell", () => {
+  it("sets a strict content security policy, loosened only for the member app's sermon player", async () => {
+    const staffPolicy = (await ctx.app.request("/up")).headers.get("content-security-policy")!;
+    expect(staffPolicy).toContain("frame-src 'none'");
+    expect(staffPolicy).toContain("frame-ancestors 'none'");
+    const appPolicy = (await ctx.app.request("/app/")).headers.get("content-security-policy")!;
+    expect(appPolicy).toContain("frame-src https://subsplash.com https://*.subsplash.com");
+    expect(appPolicy).toContain("img-src 'self' data: blob: https://images.subsplash.com");
+    expect(appPolicy).toContain("script-src 'self'");
+  });
+
   it("serves health checks and the OpenAPI document without auth", async () => {
     expect((await ctx.app.request("/up")).status).toBe(200);
     const spec = await (await ctx.app.request("/api/openapi.json")).json();

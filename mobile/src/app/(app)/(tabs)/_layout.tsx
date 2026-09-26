@@ -1,13 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
 import { Tabs } from "expo-router";
-import type { ChatGroup } from "@shared/schemas";
-import { api } from "../../../lib/api";
+import { useGroups } from "../../../lib/queries";
 import { useTheme } from "../../../lib/theme";
 
 export default function TabsLayout() {
   const t = useTheme();
-  const groups = useQuery({ queryKey: ["groups"], queryFn: () => api.get<{ groups: ChatGroup[] }>("/app/groups"), refetchInterval: 30_000 });
+  const groups = useGroups();
   const unread = groups.data?.groups.reduce((n, g) => n + g.unread, 0) ?? 0;
   return (
     <Tabs
@@ -21,7 +19,8 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: t.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Directory", tabBarIcon: ({ color, size }) => <Ionicons name="people" color={color} size={size} /> }} />
+      <Tabs.Screen name="index" options={{ title: "Home", headerShown: false, tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} /> }} />
+      <Tabs.Screen name="directory" options={{ title: "Directory", tabBarIcon: ({ color, size }) => <Ionicons name="people" color={color} size={size} /> }} />
       <Tabs.Screen name="sermons" options={{ title: "Sermons", tabBarIcon: ({ color, size }) => <Ionicons name="play-circle" color={color} size={size} /> }} />
       <Tabs.Screen
         name="groups"

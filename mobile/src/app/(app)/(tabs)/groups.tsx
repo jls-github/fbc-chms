@@ -1,20 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
-import type { ChatGroup } from "@shared/schemas";
 import { EmptyState, ErrorView, Loading } from "../../../components/ui";
-import { api } from "../../../lib/api";
+import { useGroups } from "../../../lib/queries";
 import { chatTime } from "../../../lib/format";
 import { useTheme } from "../../../lib/theme";
 
 export default function GroupsScreen() {
   const t = useTheme();
-  const { data, isLoading, error, refetch, isRefetching } = useQuery({
-    queryKey: ["groups"],
-    queryFn: () => api.get<{ groups: ChatGroup[] }>("/app/groups"),
-    refetchInterval: 15_000,
-  });
+  const { data, isLoading, error, refetch, isRefetching } = useGroups(15_000);
   if (isLoading) return <Loading />;
   if (error) return <ErrorView error={error} onRetry={() => void refetch()} />;
 

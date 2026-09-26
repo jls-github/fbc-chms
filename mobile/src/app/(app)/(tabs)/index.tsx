@@ -1,82 +1,194 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
-import { Pressable, RefreshControl, SectionList, StyleSheet, Text, TextInput, View } from "react-native";
-import type { DirectoryEntry } from "@shared/schemas";
-import { EmptyState, ErrorView, Loading, Photo } from "../../../components/ui";
-import { adultNames, matches, useDirectory } from "../../../lib/directory";
+import { Image } from "expo-image";
+import { router, type Href } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import type { IconName } from "../../../components/ui";
+import { API_URL } from "../../../lib/api";
+import { useMe } from "../../../lib/auth";
+import { useDirectory } from "../../../lib/directory";
+import { longDate } from "../../../lib/format";
+import { useGroups, useSermons } from "../../../lib/queries";
 import { useTheme } from "../../../lib/theme";
 
-export default function DirectoryScreen() {
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
+
+function Tile({
+  icon,
+  title,
+  detail,
+  onPress,
+  badge,
+  width,
+}: {
+  icon: IconName;
+  title: string;
+  detail: string;
+  onPress: () => void;
+  badge?: number;
+  width: number;
+}) {
   const t = useTheme();
-  const { data, isLoading, error, refetch, isRefetching } = useDirectory();
-  const [q, setQ] = useState("");
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${detail}${badge ? `. ${badge} unread` : ""}`}
+      style={({ pressed }) => [styles.tile, { width, backgroundColor: t.card, borderColor: t.border, opacity: pressed ? 0.75 : 1 }]}
+    >
+      <View style={styles.tileTop}>
+        <View style={[styles.tileIcon, { backgroundColor: t.brandSoft }]}>
+          <Ionicons name={icon} size={24} color={t.brand} />
+        </View>
+        {!!badge && (
+          <View style={[styles.badge, { backgroundColor: t.brand }]}>
+            <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
+          </View>
+        )}
+      </View>
+      <Text style={[styles.tileTitle, { color: t.text }]}>{title}</Text>
+      <Text style={{ color: t.muted, fontSize: 13, lineHeight: 18 }} numberOfLines={2}>
+        {detail}
+      </Text>
+    </Pressable>
+  );
+}
 
-  const sections = useMemo(() => {
-    const groups = new Map<string, DirectoryEntry[]>();
-    for (const e of (data ?? []).filter((x) => matches(x, q.trim()))) {
-      const letter = e.sortName[0]?.toUpperCase() ?? "#";
-      groups.set(letter, [...(groups.get(letter) ?? []), e]);
-    }
-    return [...groups.entries()].map(([title, entries]) => ({ title, data: entries }));
-  }, [data, q]);
+export default function HomeScreen() {
+  const t = useTheme();
+  const { width } = useWindowDimensions();
+  const me = useMe();
+  const directory = useDirectory();
+  const sermons = useSermons();
+  const groups = useGroups();
 
-  if (isLoading) return <Loading />;
-  if (error) return <ErrorView error={error} onRetry={() => void refetch()} />;
+  const user = me.data?.user;
+  const member = me.data?.profile.member;
+  const latest = sermons.data?.sermons[0];
+  const myGroups = groups.data?.groups ?? [];
+  const unread = myGroups.reduce((n, g) => n + g.unread, 0);
+  const households = directory.data?.filter((e) => e.householdId).length;
+
+  // Two tiles per row on phones, three on wider screens.
+  const content = Math.min(width, 820) - 32;
+  const columns = content > 560 ? 3 : 2;
+  const tileWidth = (content - 12 * (columns - 1)) / columns;
+
+  const go = (href: Href) => router.push(href);
+  const staffTools =
+    user?.role === "admin" || user?.role === "staff"
+      ? { title: "Staff site", detail: "People, attendance, check-in and more", path: "/" }
+      : user?.role === "volunteer"
+        ? { title: "Kids check-in", detail: "Today's roster and pickups", path: "/checkin" }
+        : null;
+  const openStaff = (path: string) =>
+    Platform.OS === "web" ? window.open(path, "_blank", "noopener") : void WebBrowser.openBrowserAsync(`${API_URL}${path}`);
+
+  const refreshing = me.isRefetching || directory.isRefetching || sermons.isRefetching || groups.isRefetching;
 
   return (
-    <SectionList
-      sections={sections}
-      keyExtractor={(e) => e.key}
-      stickySectionHeadersEnabled
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={t.brand} />}
-      contentContainerStyle={{ paddingBottom: 24 }}
-      ListHeaderComponent={
-        <View style={[styles.search, { backgroundColor: t.card, borderColor: t.border }]}>
-          <Ionicons name="search" size={18} color={t.faint} />
-          <TextInput
-            value={q}
-            onChangeText={setQ}
-            placeholder="Search names, phones, emails"
-            placeholderTextColor={t.faint}
-            style={[styles.searchInput, { color: t.text }]}
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-            accessibilityLabel="Search the directory"
+    <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: t.bg }}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            tintColor={t.brand}
+            onRefresh={() => void Promise.all([me.refetch(), directory.refetch(), sermons.refetch(), groups.refetch()])}
           />
+        }
+      >
+        <View style={{ gap: 2 }}>
+          <Text style={{ color: t.muted, fontSize: 15 }}>FBC Enumclaw</Text>
+          <Text style={[styles.hello, { color: t.text }]}>
+            {greeting()}
+            {member ? `, ${member.firstName}` : ""}
+          </Text>
         </View>
-      }
-      ListEmptyComponent={<EmptyState icon="people-outline" title={q ? `No one matches “${q}”` : "The directory is empty"} />}
-      renderSectionHeader={({ section }) => (
-        <Text style={[styles.letter, { color: t.muted, backgroundColor: t.bg }]}>{section.title}</Text>
-      )}
-      renderItem={({ item }) => (
-        <Pressable
-          onPress={() => router.push({ pathname: "/directory/[key]", params: { key: item.key } })}
-          style={({ pressed }) => [styles.row, { backgroundColor: pressed ? t.border : t.card, borderColor: t.border }]}
-          accessibilityRole="button"
-          accessibilityLabel={`${item.title}, ${adultNames(item) || item.children.map((c) => c.firstName).join(", ")}`}
-        >
-          <Photo url={item.photoUrl} title={item.title} size={52} />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={[styles.title, { color: t.text }]} numberOfLines={1}>{item.title}</Text>
-            <Text style={{ color: t.muted, fontSize: 14 }} numberOfLines={1}>
-              {[adultNames(item), item.children.map((c) => c.firstName).join(", ")].filter(Boolean).join(" · ")}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={t.faint} />
-        </Pressable>
-      )}
-    />
+
+        {latest && (
+          <Pressable
+            onPress={() => go({ pathname: "/sermons/[id]", params: { id: latest.id } })}
+            accessibilityRole="button"
+            accessibilityLabel={`Play the latest sermon: ${latest.title}`}
+            style={({ pressed }) => [styles.sermon, { backgroundColor: t.card, borderColor: t.border, opacity: pressed ? 0.85 : 1 }]}
+          >
+            {latest.imageUrl ? (
+              <Image source={{ uri: latest.imageUrl }} style={styles.sermonImage} contentFit="cover" transition={200} />
+            ) : (
+              <View style={[styles.sermonImage, { backgroundColor: t.brandSoft }]} />
+            )}
+            <View style={styles.play}>
+              <Ionicons name="play" size={22} color="#fff" />
+            </View>
+            <View style={{ padding: 14, gap: 2 }}>
+              <Text style={{ color: t.brand, fontSize: 12, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6 }}>Latest sermon</Text>
+              <Text style={{ color: t.text, fontSize: 18, fontWeight: "700" }} numberOfLines={2}>
+                {latest.title}
+              </Text>
+              <Text style={{ color: t.muted, fontSize: 13 }}>{[latest.date && longDate(latest.date), latest.speaker].filter(Boolean).join(" · ")}</Text>
+            </View>
+          </Pressable>
+        )}
+
+        <View style={styles.grid}>
+          <Tile
+            icon="people"
+            title="Directory"
+            detail={households !== undefined ? `${households} households` : "Find church family"}
+            onPress={() => go("/directory")}
+            width={tileWidth}
+          />
+          <Tile icon="play-circle" title="Sermons" detail={latest ? `Latest: ${latest.title}` : "Recent messages"} onPress={() => go("/sermons")} width={tileWidth} />
+          <Tile
+            icon="chatbubbles"
+            title="Groups"
+            detail={
+              myGroups.length === 0
+                ? "You're not in a group yet"
+                : unread
+                  ? `${unread} new ${unread === 1 ? "message" : "messages"}`
+                  : myGroups.map((g) => g.name).join(", ")
+            }
+            badge={unread}
+            onPress={() => go("/groups")}
+            width={tileWidth}
+          />
+          <Tile icon="person-circle" title="My profile" detail="Contact details and what you share" onPress={() => go("/profile")} width={tileWidth} />
+          {staffTools && (
+            <Tile icon="briefcase" title={staffTools.title} detail={staffTools.detail} onPress={() => openStaff(staffTools.path)} width={tileWidth} />
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  search: { flexDirection: "row", alignItems: "center", gap: 8, margin: 16, marginBottom: 4, paddingHorizontal: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, minHeight: 44 },
-  searchInput: { flex: 1, fontSize: 16, paddingVertical: 10 },
-  letter: { fontSize: 13, fontWeight: "700", paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6 },
-  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  title: { fontSize: 16, fontWeight: "600" },
+  scroll: { padding: 16, gap: 18, paddingBottom: 32, maxWidth: 820, width: "100%", alignSelf: "center" },
+  hello: { fontSize: 28, fontWeight: "700", letterSpacing: -0.4 },
+  sermon: { borderRadius: 18, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth },
+  sermonImage: { width: "100%", aspectRatio: 16 / 9 },
+  play: {
+    position: "absolute",
+    right: 14,
+    top: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  tile: { minHeight: 132, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, padding: 14, gap: 6 },
+  tileTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 },
+  tileIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  tileTitle: { fontSize: 17, fontWeight: "700" },
+  badge: { minWidth: 24, height: 24, borderRadius: 12, paddingHorizontal: 7, alignItems: "center", justifyContent: "center" },
+  badgeText: { color: "#fff", fontSize: 12, fontWeight: "700" },
 });

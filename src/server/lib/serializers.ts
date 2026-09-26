@@ -31,6 +31,7 @@ export function memberFields(m: MemberRow) {
     state: m.state,
     postalCode: m.postalCode,
     notes: m.notes,
+    medicalNotes: m.medicalNotes,
     familyId: m.familyId,
     createdAt: iso(m.createdAt),
     updatedAt: iso(m.updatedAt),
@@ -62,3 +63,6 @@ export function timestamps(row: { createdAt: Date; updatedAt: Date }) {
 
 /** Escapes LIKE wildcards so user input is matched literally. */
 export const likePattern = (q: string) => `%${q.replace(/[\\%_]/g, "\\$&")}%`;
+
+/** Matches values that start with q (LIKE wildcards in q are escaped). */
+export const prefixPattern = (q: string) => `${q.replace(/[\\%_]/g, "\\$&")}%`;

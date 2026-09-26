@@ -10,6 +10,7 @@ import { sql } from "drizzle-orm";
 import { requireAuth, SESSION_COOKIE } from "./auth/middleware";
 import { ApiError, pgErrorCode } from "./lib/errors";
 import { createRouter, type AppDeps, type AppEnv } from "./lib/router";
+import { createMiddleware } from "hono/factory";
 import { attendanceRoutes } from "./routes/attendance";
 import { authRoutes } from "./routes/auth";
 import { dashboardRoutes } from "./routes/dashboard";
@@ -18,6 +19,7 @@ import { groupRoutes } from "./routes/groups";
 import { memberRoutes } from "./routes/members";
 import { teamRoutes } from "./routes/teams";
 import { publicReportRoutes, reportLinkRoutes } from "./routes/report-links";
+import { kioskRoutes, rosterRoutes } from "./routes/checkin";
 import { userRoutes } from "./routes/users";
 
 export const API_VERSION = "v1";
@@ -30,11 +32,35 @@ const PUBLIC_API_PATHS = new Set(
 /** Everything under /api/v1/public/ is intentionally unauthenticated (and rate limited per route). */
 const PUBLIC_PREFIX = `/api/${API_VERSION}/public/`;
 
+const v1 = (p: string) => `/api/${API_VERSION}${p}`;
+
+/**
+ * Kiosk devices and check-in volunteers see children's details, so they get
+ * the narrowest possible access:
+ * - a kiosk session can only use the kiosk endpoints (plus who-am-I and sign-out);
+ * - a volunteer can only use the check-in roster (plus their own account).
+ */
+const limitRestrictedSessions = createMiddleware<AppEnv>(async (c, next) => {
+  const path = c.req.path;
+  const session = c.get("session");
+  if (!session) return next(); // public endpoints
+  const user = c.get("user");
+  const allowed =
+    session.kind === "kiosk"
+      ? path.startsWith(v1("/kiosk/")) || path === v1("/auth/me") || path === v1("/auth/logout")
+      : user.role === "volunteer"
+        ? path.startsWith(v1("/auth/")) || (path.startsWith(v1("/checkin/")) && !path.startsWith(v1("/checkin/kiosks")))
+        : true;
+  if (!allowed) throw new ApiError(403, "You don't have access to that.");
+  await next();
+});
+
 export function buildApi() {
   const api = createRouter();
   api.use("*", (c, next) =>
     PUBLIC_API_PATHS.has(c.req.path) || c.req.path.startsWith(PUBLIC_PREFIX) ? next() : requireAuth(c, next),
   );
+  api.use("*", limitRestrictedSessions);
   api
     .route("/", authRoutes)
     .route("/", dashboardRoutes)
@@ -45,7 +71,9 @@ export function buildApi() {
     .route("/", attendanceRoutes)
     .route("/", userRoutes)
     .route("/", publicReportRoutes)
-    .route("/", reportLinkRoutes);
+    .route("/", reportLinkRoutes)
+    .route("/", kioskRoutes)
+    .route("/", rosterRoutes);
 
   api.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",

@@ -1,14 +1,15 @@
+import type { SessionKind } from "@shared/constants";
 import { and, eq, gt } from "drizzle-orm";
 import type { Db } from "../db/client";
 import { sessions, users } from "../db/schema";
 import { hashToken, newToken } from "./crypto";
 
 const DAY = 24 * 60 * 60 * 1000;
-export const SESSION_TTL = { web: 30 * DAY, api: 365 * DAY } as const;
+export const SESSION_TTL: Record<SessionKind, number> = { web: 30 * DAY, api: 365 * DAY, kiosk: 365 * DAY };
 
 type SessionMeta = { ipAddress?: string | null; userAgent?: string | null; label?: string | null };
 
-export async function createSession(db: Db, userId: number, kind: "web" | "api", meta: SessionMeta = {}) {
+export async function createSession(db: Db, userId: number, kind: SessionKind, meta: SessionMeta = {}) {
   const token = newToken();
   const expiresAt = new Date(Date.now() + SESSION_TTL[kind]);
   await db.insert(sessions).values({

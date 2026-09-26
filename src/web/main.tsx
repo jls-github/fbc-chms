@@ -6,6 +6,8 @@ import { AppLayout } from "./components/layout";
 import { ConfirmProvider, EmptyState, ToastProvider } from "./components/ui";
 import { ApiError, setUnauthorizedHandler } from "./lib/api";
 import { AttendancePage } from "./pages/attendance";
+import { CheckinPage } from "./pages/checkin";
+import { KioskPage } from "./pages/kiosk";
 import { ForgotPasswordPage, LoginPage, ResetPasswordPage } from "./pages/auth";
 import { DashboardPage } from "./pages/dashboard";
 import { HouseholdPage, HouseholdsPage } from "./pages/households";
@@ -44,6 +46,7 @@ const router = createBrowserRouter([
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
   { path: "/r/:token", element: <LeaderReportPage /> },
+  { path: "/kiosk", element: <KioskPage /> },
   {
     element: <AppLayout />,
     children: [
@@ -59,6 +62,7 @@ const router = createBrowserRouter([
       { path: "teams", element: <TeamsPage /> },
       { path: "teams/:id", element: <TeamPage /> },
       { path: "attendance", element: <AttendancePage /> },
+      { path: "checkin", element: <CheckinPage /> },
       { path: "settings", element: <SettingsPage /> },
       { path: "*", element: <NotFound /> },
     ],

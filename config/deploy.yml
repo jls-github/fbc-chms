@@ -33,6 +33,8 @@ builder:
 env:
   clear:
     APP_URL: https://manage.fbcenumclaw.com
+    # "Today" for kids check-in is the church's local date.
+    CHURCH_TIMEZONE: America/Los_Angeles
   secret:
     - DATABASE_URL
 

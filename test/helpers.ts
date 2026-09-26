@@ -27,7 +27,7 @@ export async function createTestContext() {
     mail.length = 0;
     await db.execute(
       sql.raw(
-        "truncate report_links, attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
+        "truncate checkins, report_links, attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
       ),
     );
   }

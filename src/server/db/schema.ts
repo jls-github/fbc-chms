@@ -11,7 +11,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, MEMBER_STATUSES, USER_ROLES } from "@shared/constants";
+import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, MEMBER_STATUSES, SESSION_KINDS, USER_ROLES } from "@shared/constants";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -52,6 +52,8 @@ export const members = pgTable(
     status: memberStatus("status").notNull().default("guest"),
     isChild: boolean("is_child").notNull().default(false),
     notes: text("notes"),
+    /** Allergies, medications, special needs — shown to check-in volunteers and on kids' name tags. */
+    medicalNotes: text("medical_notes"),
     familyId: integer("family_id").references(() => families.id, { onDelete: "set null" }),
     ...timestamps,
   },
@@ -151,6 +153,38 @@ export const reportLinks = pgTable("report_links", {
 });
 
 // ---------------------------------------------------------------------------
+// Kids check-in
+// ---------------------------------------------------------------------------
+
+/**
+ * One row per child per service day. Every child a household checks in on a
+ * given day shares one security code, which is printed on the kids' name tags
+ * and on the parent's pickup tag.
+ */
+export const checkins = pgTable(
+  "checkins",
+  {
+    id: serial("id").primaryKey(),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    familyId: integer("family_id").references(() => families.id, { onDelete: "set null" }),
+    /** The church's local calendar date (see CHURCH_TIMEZONE), not UTC. */
+    serviceDate: date("service_date").notNull(),
+    securityCode: text("security_code").notNull(),
+    checkedInAt: timestamp("checked_in_at", { withTimezone: true }).notNull().defaultNow(),
+    /** Kiosk label or staff email, for the audit trail. */
+    checkedInBy: text("checked_in_by"),
+    checkedOutAt: timestamp("checked_out_at", { withTimezone: true }),
+    checkedOutBy: text("checked_out_by"),
+  },
+  (t) => [
+    uniqueIndex("checkins_member_day_idx").on(t.memberId, t.serviceDate),
+    index("checkins_day_code_idx").on(t.serviceDate, t.securityCode),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // Staff accounts & authentication
 // ---------------------------------------------------------------------------
 
@@ -179,7 +213,7 @@ export const sessions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     tokenHash: text("token_hash").notNull(),
-    kind: text("kind", { enum: ["web", "api"] }).notNull(),
+    kind: text("kind", { enum: SESSION_KINDS }).notNull(),
     label: text("label"),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
@@ -232,6 +266,11 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
 export const teamMembershipsRelations = relations(teamMemberships, ({ one }) => ({
   team: one(teams, { fields: [teamMemberships.teamId], references: [teams.id] }),
   member: one(members, { fields: [teamMemberships.memberId], references: [members.id] }),
+}));
+
+export const checkinsRelations = relations(checkins, ({ one }) => ({
+  member: one(members, { fields: [checkins.memberId], references: [members.id] }),
+  family: one(families, { fields: [checkins.familyId], references: [families.id] }),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({ sessions: many(sessions) }));

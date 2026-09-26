@@ -4,7 +4,7 @@
  * a future native mobile client).
  */
 import { z } from "zod";
-import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, LINK_REPORT_EVENT_TYPES, MEMBER_STATUSES, USER_ROLES } from "./constants";
+import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, LINK_REPORT_EVENT_TYPES, MEMBER_STATUSES, SESSION_KINDS, USER_ROLES } from "./constants";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -81,6 +81,12 @@ export const User = z
   })
   .meta({ id: "User" });
 
+export const MeResponse = z.object({
+  user: User,
+  /** "kiosk" means this device is a locked-down check-in iPad. */
+  session: z.object({ kind: z.enum(SESSION_KINDS), label: z.string().nullable() }),
+});
+
 export const UserPatch = z
   .object({ name: optionalText(), role: z.enum(USER_ROLES) })
   .partial();
@@ -117,6 +123,7 @@ const memberInputShape = {
   status: z.enum(MEMBER_STATUSES),
   isChild: z.boolean(),
   notes: optionalText(5000),
+  medicalNotes: optionalText(2000),
   familyId: optionalId,
 };
 
@@ -145,6 +152,7 @@ const MemberFields = {
   status: z.enum(MEMBER_STATUSES),
   isChild: z.boolean(),
   notes: z.string().nullable(),
+  medicalNotes: z.string().nullable(),
   familyId: z.number().nullable(),
   ...timestamps,
 };
@@ -349,3 +357,103 @@ export const SearchResult = z
   })
   .meta({ id: "SearchResult" });
 export type SearchResult = z.infer<typeof SearchResult>;
+
+// ---------------------------------------------------------------------------
+// Kids check-in
+// ---------------------------------------------------------------------------
+
+const phoneDigits = (label: string) =>
+  z
+    .string()
+    .trim()
+    .refine((v) => v.replace(/\D/g, "").length >= 10, `${label} needs all 10 digits`);
+
+export const KioskLookupQuery = z.object({ q: z.string().trim().min(2, "Type at least 2 letters or 4 digits") });
+
+export const KioskChild = z
+  .object({
+    id: z.number(),
+    firstName: z.string(),
+    lastName: z.string(),
+    birthdate: z.string().nullable(),
+    medicalNotes: z.string().nullable(),
+    checkedIn: z.boolean(),
+    securityCode: z.string().nullable(),
+  })
+  .meta({ id: "KioskChild" });
+export type KioskChild = z.infer<typeof KioskChild>;
+
+export const KioskHousehold = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    adults: z.array(z.object({ id: z.number(), firstName: z.string(), lastName: z.string() })),
+    children: z.array(KioskChild),
+  })
+  .meta({ id: "KioskHousehold" });
+export type KioskHousehold = z.infer<typeof KioskHousehold>;
+
+export const KioskChildInput = z.object({
+  firstName: requiredText("First name", 100),
+  lastName: optionalText(100),
+  birthdate: isoDate,
+  medicalNotes: optionalText(2000),
+});
+export type KioskChildInput = z.input<typeof KioskChildInput>;
+
+export const KioskRegisterInput = z.object({
+  parent: z.object({
+    firstName: requiredText("First name", 100),
+    lastName: requiredText("Last name", 100),
+    phone: phoneDigits("Phone number"),
+    email: z
+      .union([z.string().trim().email("Enter a valid email address"), z.literal("")])
+      .nullish()
+      .transform((v) => (v ? v : null)),
+  }),
+  children: z.array(KioskChildInput).min(1, "Add at least one child").max(10),
+});
+export type KioskRegisterInput = z.input<typeof KioskRegisterInput>;
+
+export const KioskCheckinInput = z.object({
+  householdId: z.number().int().positive(),
+  childIds: z.array(z.number().int().positive()).min(1, "Choose at least one child").max(20),
+});
+
+export const KioskCheckinResult = z
+  .object({ securityCode: z.string(), serviceDate: z.string(), householdName: z.string(), children: z.array(KioskChild) })
+  .meta({ id: "KioskCheckinResult" });
+export type KioskCheckinResult = z.infer<typeof KioskCheckinResult>;
+
+export const RosterEntry = z
+  .object({
+    id: z.number(),
+    child: z.object({
+      id: z.number(),
+      firstName: z.string(),
+      lastName: z.string(),
+      birthdate: z.string().nullable(),
+      medicalNotes: z.string().nullable(),
+    }),
+    household: z.object({ id: z.number(), name: z.string() }).nullable(),
+    /** Adults in the household, so volunteers can reach a parent. */
+    contacts: z.array(z.object({ name: z.string(), phone: z.string().nullable() })),
+    securityCode: z.string(),
+    checkedInAt: z.string(),
+    checkedInBy: z.string().nullable(),
+    checkedOutAt: z.string().nullable(),
+    checkedOutBy: z.string().nullable(),
+  })
+  .meta({ id: "RosterEntry" });
+export type RosterEntry = z.infer<typeof RosterEntry>;
+
+export const RosterQuery = z.object({ date: isoDate.optional() });
+
+export const CheckoutInput = z.object({ checkinIds: z.array(z.number().int().positive()).min(1).max(50) });
+
+export const KioskDevice = z
+  .object({ id: z.number(), label: z.string().nullable(), createdAt: z.string(), lastUsedAt: z.string(), setUpBy: z.string() })
+  .meta({ id: "KioskDevice" });
+export type KioskDevice = z.infer<typeof KioskDevice>;
+
+export const CreateKioskInput = z.object({ label: requiredText("Name", 60) });

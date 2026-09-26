@@ -8,6 +8,7 @@ import {
   ErrorResponse,
   ForgotPasswordInput,
   LoginInput,
+  MeResponse,
   ResetPasswordInput,
   TokenInput,
   TokenResponse,
@@ -184,9 +185,10 @@ export const authRoutes = createRouter()
       tags: ["Auth"],
       summary: "The signed-in user",
       security,
-      responses: { 200: jsonContent(UserEnvelope), ...authErrors },
+      responses: { 200: jsonContent(MeResponse), ...authErrors },
     }),
-    (c) => c.json({ user: serializeUser(c.var.user) }, 200),
+    (c) =>
+      c.json({ user: serializeUser(c.var.user), session: { kind: c.var.session.kind, label: c.var.session.label } }, 200),
   )
   .openapi(
     createRoute({

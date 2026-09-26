@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Cake, HandHeart, House, Mail, MapPin, Pencil, Phone, Plus, Trash2, UsersRound, X } from "lucide-react";
+import { Cake, CircleAlert, HandHeart, House, Mail, MapPin, Pencil, Phone, Plus, Trash2, UsersRound, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { MEMBER_STATUSES, MEMBER_STATUS_LABELS, type MemberStatus } from "@shared/constants";
@@ -215,6 +215,12 @@ export function MemberPage() {
         }
       />
 
+      {member.medicalNotes && (
+        <div role="note" className="mb-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span><strong className="font-semibold">Allergies & medical: </strong>{member.medicalNotes}</span>
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <div className="space-y-6">
           <Card>
@@ -313,6 +319,7 @@ function MemberForm({ member }: { member?: MemberDetail }) {
     status: (member?.status ?? "guest") as MemberStatus,
     isChild: member?.isChild ?? false,
     notes: member?.notes ?? "",
+    medicalNotes: member?.medicalNotes ?? "",
     familyId: member?.familyId ? String(member.familyId) : "",
   });
   const v = form.values;
@@ -412,6 +419,15 @@ function MemberForm({ member }: { member?: MemberDetail }) {
         </Card>
 
         <Card className="p-5">
+          <Field
+            label="Allergies & medical notes"
+            htmlFor="medicalNotes"
+            error={form.errors.medicalNotes}
+            hint="Shown to check-in volunteers and printed on kids' name tags."
+            className="mb-4"
+          >
+            <Input placeholder="e.g. peanut allergy, inhaler in diaper bag" {...form.bind("medicalNotes")} />
+          </Field>
           <Field label="Notes" htmlFor="notes" error={form.errors.notes} hint="Visible to all staff.">
             <Textarea rows={4} {...form.bind("notes")} />
           </Field>

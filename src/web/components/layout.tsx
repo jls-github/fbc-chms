@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import {
+  Baby,
   ChartColumn,
   Church,
   House,
@@ -29,7 +30,12 @@ const NAV = [
   { to: "/groups", label: "Groups", icon: UsersRound },
   { to: "/teams", label: "Teams", icon: HandHeart },
   { to: "/attendance", label: "Attendance", icon: ChartColumn },
+  { to: "/checkin", label: "Kids check-in", icon: Baby },
 ];
+
+/** Volunteers only ever see check-in (the API enforces this too). */
+const navFor = (role: string | undefined) => (role === "volunteer" ? NAV.filter((n) => n.to === "/checkin") : NAV);
+const VOLUNTEER_PATHS = ["/checkin", "/settings"];
 
 type Theme = "light" | "dark" | "system";
 
@@ -90,7 +96,7 @@ function SidebarContent({ onNavigate, onSearch }: { onNavigate?: () => void; onS
   return (
     <div className="flex h-full flex-col gap-4 p-3">
       <Brand />
-      <button
+      {me?.role !== "volunteer" && <button
         type="button"
         onClick={onSearch}
         className="flex h-9 items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 text-sm text-zinc-500 shadow-xs hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
@@ -98,9 +104,9 @@ function SidebarContent({ onNavigate, onSearch }: { onNavigate?: () => void; onS
         <Search className="size-4" aria-hidden />
         <span className="flex-1 text-left">Search…</span>
         <kbd className="hidden rounded border border-zinc-200 px-1.5 font-sans text-[11px] text-zinc-400 sm:inline dark:border-zinc-700">⌘K</kbd>
-      </button>
+      </button>}
       <nav aria-label="Main" className="flex flex-1 flex-col gap-0.5">
-        {NAV.map(({ to, label, icon: Icon, end }) => (
+        {navFor(me?.role).map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -171,19 +177,23 @@ export function AppLayout() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && me?.role !== "volunteer") {
         e.preventDefault();
         setSearchOpen((o) => !o);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [me?.role]);
 
   useEffect(() => setDrawerOpen(false), [location.pathname]);
 
   if (isLoading) return <div className="min-h-screen" aria-busy="true" />;
   if (!me) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  if (me.sessionKind === "kiosk") return <Navigate to="/kiosk" replace />;
+  if (me.role === "volunteer" && !VOLUNTEER_PATHS.some((p) => location.pathname.startsWith(p))) {
+    return <Navigate to="/checkin" replace />;
+  }
 
   const openSearch = () => {
     setDrawerOpen(false);
@@ -202,9 +212,13 @@ export function AppLayout() {
           <Menu className="size-5" />
         </IconButton>
         <Brand />
-        <IconButton label="Search" onClick={openSearch}>
-          <Search className="size-5" />
-        </IconButton>
+        {me.role !== "volunteer" ? (
+          <IconButton label="Search" onClick={openSearch}>
+            <Search className="size-5" />
+          </IconButton>
+        ) : (
+          <span className="size-8" />
+        )}
       </header>
       {drawerOpen && (
         <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">

@@ -60,3 +60,26 @@
     transition-duration: 1ms !important;
   }
 }
+
+/* Kids check-in labels: one 4in × 2in label per page (common AirPrint label printers). */
+@media print {
+  @page {
+    size: 4in 2in;
+    margin: 0;
+  }
+  html,
+  body {
+    background: white !important;
+  }
+  .kid-label {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: 4in;
+    height: 2in;
+    padding: 0.15in 0.2in;
+    color: black;
+    break-after: page;
+    overflow: hidden;
+  }
+}

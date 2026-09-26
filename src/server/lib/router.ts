@@ -1,12 +1,12 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import type { Db } from "../db/client";
 import type { Mailer } from "./mailer";
-import type { UserRole } from "@shared/constants";
+import type { SessionKind, UserRole } from "@shared/constants";
 
 export type AppDeps = { db: Db; mailer: Mailer };
 
 export type AuthUser = { id: number; email: string; name: string | null; role: UserRole; createdAt: Date };
-export type AuthSession = { id: number; kind: "web" | "api" };
+export type AuthSession = { id: number; kind: SessionKind; label: string | null };
 
 export type AppEnv = {
   Variables: { deps: AppDeps; user: AuthUser; session: AuthSession };

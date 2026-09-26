@@ -15,6 +15,13 @@
       "when": 1790396345730,
       "tag": "0001_leader_report_links",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790438217681,
+      "tag": "0002_kids_checkin",
+      "breakpoints": true
     }
   ]
 }

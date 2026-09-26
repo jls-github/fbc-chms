@@ -1,6 +1,6 @@
 import { ArrowUpRight, KeyRound, Plus, Shield, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { USER_ROLES, type UserRole } from "@shared/constants";
+import { USER_ROLE_LABELS, USER_ROLES, type UserRole } from "@shared/constants";
 import { Badge, Button, Card, CardHeader, Field, IconButton, Input, Modal, PageHeader, Select, useConfirm, useToast } from "../components/ui";
 import { api, errorMessage } from "../lib/api";
 import { useForm } from "../lib/form";
@@ -76,10 +76,21 @@ function NewUserDialog({ open, onClose }: { open: boolean; onClose: () => void }
         <Field label="Email" htmlFor="email" error={form.errors.email}>
           <Input type="email" autoComplete="off" {...form.bind("email")} />
         </Field>
-        <Field label="Role" htmlFor="role" error={form.errors.role} hint="Admins can also manage staff accounts.">
+        <Field
+          label="Role"
+          htmlFor="role"
+          error={form.errors.role}
+          hint={
+            form.values.role === "volunteer"
+              ? "Can only see the kids check-in roster and check kids out."
+              : form.values.role === "admin"
+                ? "Everything, including managing accounts."
+                : "Everything except managing accounts."
+          }
+        >
           <Select id="role" value={form.values.role} onChange={(e) => form.set("role", e.target.value as UserRole)}>
             {USER_ROLES.map((r) => (
-              <option key={r} value={r}>{r === "admin" ? "Admin" : "Staff"}</option>
+              <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>
             ))}
           </Select>
         </Field>
@@ -114,7 +125,7 @@ function StaffAccounts({ me }: { me: User }) {
               </p>
               <p className="truncate text-xs text-zinc-500">{u.name ? `${u.email} · ` : ""}added {formatDay(u.createdAt.slice(0, 10))}</p>
             </div>
-            <div className="w-28">
+            <div className="w-44">
               <Select
                 aria-label={`Role for ${u.email}`}
                 value={u.role}
@@ -127,8 +138,9 @@ function StaffAccounts({ me }: { me: User }) {
                 }
                 className="h-8"
               >
-                <option value="admin">Admin</option>
-                <option value="staff">Staff</option>
+                {USER_ROLES.map((r) => (
+                  <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>
+                ))}
               </Select>
             </div>
             <IconButton
@@ -162,11 +174,13 @@ export function SettingsPage() {
         {me.role === "admin" ? (
           <StaffAccounts me={me} />
         ) : (
-          <Card className="flex items-center gap-3 px-5 py-4 text-sm text-zinc-600 dark:text-zinc-400">
-            <Shield className="size-4" aria-hidden /> Ask an admin if you need another staff account added.
-          </Card>
+          me.role === "staff" && (
+            <Card className="flex items-center gap-3 px-5 py-4 text-sm text-zinc-600 dark:text-zinc-400">
+              <Shield className="size-4" aria-hidden /> Ask an admin if you need another account added.
+            </Card>
+          )
         )}
-        <Card>
+        {me.role !== "volunteer" && <Card>
           <CardHeader title="API" description="For the mobile app and other integrations" />
           <div className="space-y-2 px-5 py-4 text-sm text-zinc-600 dark:text-zinc-400">
             <p>
@@ -177,7 +191,7 @@ export function SettingsPage() {
               Open the interactive API reference <ArrowUpRight className="size-4" aria-hidden />
             </a>
           </div>
-        </Card>
+        </Card>}
       </div>
     </>
   );

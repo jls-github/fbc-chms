@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AttendanceEventType, MemberStatus, UserRole } from "@shared/constants";
+import type { AttendanceEventType, MemberStatus, SessionKind, UserRole } from "@shared/constants";
 import type {
   AttendanceInput,
   AttendanceReport,
@@ -10,6 +10,8 @@ import type {
   MemberInput,
   MemberSummary,
   ReportLink,
+  RosterEntry,
+  KioskDevice,
   SearchResult,
   Team,
 } from "@shared/schemas";
@@ -27,10 +29,15 @@ function useInvalidate() {
 
 // ------------------------------------------------------------------- auth
 
+export type Me = User & { sessionKind: SessionKind; sessionLabel: string | null };
+
 export const useMe = () =>
   useQuery({
     queryKey: ["me"],
-    queryFn: () => api.get<{ user: User }>("/auth/me").then((r) => r.user),
+    queryFn: () =>
+      api
+        .get<{ user: User; session: { kind: SessionKind; label: string | null } }>("/auth/me")
+        .then((r): Me => ({ ...r.user, sessionKind: r.session.kind, sessionLabel: r.session.label })),
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
@@ -39,7 +46,8 @@ export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { email: string; password: string }) => api.post<{ user: User }>("/auth/login", input),
-    onSuccess: ({ user }) => qc.setQueryData(["me"], user),
+    // Refetch so the session kind comes along with the user.
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
   });
 }
 
@@ -268,4 +276,43 @@ export function useUpdateUser() {
 export function useDeleteUser() {
   const invalidate = useInvalidate();
   return useMutation({ mutationFn: (id: number) => api.delete(`/users/${id}`), onSuccess: () => invalidate([["users"]]) });
+}
+
+// ------------------------------------------------------------ kids check-in
+
+export const useRoster = (date?: string) =>
+  useQuery({
+    queryKey: ["roster", date ?? "today"],
+    queryFn: () =>
+      api.get<{ serviceDate: string; today: string; entries: RosterEntry[] }>(`/checkin/roster${date ? `?date=${date}` : ""}`),
+    // Kids arrive and leave all morning; keep the volunteer's screen current.
+    refetchInterval: (q) => (q.state.data && q.state.data.serviceDate !== q.state.data.today ? false : 15_000),
+    placeholderData: keepPreviousData,
+  });
+
+export function useCheckout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (checkinIds: number[]) => api.post<{ checkedOut: number }>("/checkin/checkout", { checkinIds }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["roster"] }),
+  });
+}
+
+export function useUndoCheckout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.post(`/checkin/checkins/${id}/undo-checkout`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["roster"] }),
+  });
+}
+
+export const useKiosks = (enabled: boolean) =>
+  useQuery({ queryKey: ["kiosks"], queryFn: () => api.get<{ kiosks: KioskDevice[] }>("/checkin/kiosks").then((r) => r.kiosks), enabled });
+
+export function useDeleteKiosk() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/checkin/kiosks/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["kiosks"] }),
+  });
 }

@@ -37,24 +37,21 @@ breaking API clients.
 
 ## Roadmap: how the planned features fit
 
-### Kids check-in (Planning Center / KidCheck style)
+### Kids check-in (built)
 
-Builds on what exists: `members.isChild`, `birthdate`, and households
-(`families`) already model kids and their guardians.
-
-- **Schema:** `checkin_events` (e.g. "Sunday 10:30"), `checkin_rooms` (with age/
-  grade ranges and capacity), `checkins` (child, event, room, `security_code`,
-  checked-in/out timestamps and staff), `authorized_pickups` (per household),
-  and medical/allergy notes on `members`.
-- **API:** `/api/v1/checkin/...` — family lookup by phone's last 4 digits, check
-  a household in (generating a matching child/parent security code), check out
-  by code, and a live room roster.
-- **Roles:** a `checkin_volunteer` role that can only reach check-in routes,
-  plus kiosk devices signed in with long-lived bearer tokens (already supported).
-- **Real time:** a Server-Sent Events stream (`/api/v1/checkin/stream`) so room
-  rosters update instantly; Hono supports SSE natively.
-- **Labels:** kiosks print name tags + pickup tags; start with browser printing
-  to a Brother/Dymo label printer, or a native kiosk app on iPad.
+- **Kiosk:** a staff member opens *Kids check-in* on an iPad and turns it into
+  a kiosk. That swaps their sign-in for a `kiosk` session that can only reach
+  `/api/v1/kiosk/*` (enforced centrally in `app.ts`). Families find themselves
+  by phone (full or last 4 digits) or last name, or register (parent + kids,
+  birthdays, allergies). The kiosk resets itself after inactivity.
+- **Security codes:** one 3-character code per household per day (unambiguous
+  characters only), shared by siblings, printed on name tags and the parent's
+  pickup tag (4×2in labels via AirPrint).
+- **Volunteers:** the `volunteer` role sees only the roster: who's here, ages,
+  allergies, parent phone numbers, and checkout by matching the code.
+- **Dates:** "today" is the church's local date (`CHURCH_TIMEZONE`).
+- **Next steps:** rooms/classes by age, SMS to parents, and a native kiosk app
+  for direct label printing.
 
 ### Task dashboard
 

@@ -42,6 +42,6 @@ import them with `import type` only (the app doesn't bundle server code).
 
 - [x] In-app account deletion (Apple 5.1.1(v), Google Play) — Profile → Delete my account
 - [x] App icons (`assets/`)
-- [ ] Privacy policy URL (both stores require one) — e.g. a page on fbcenumclaw.com
+- [ ] Privacy policy URL (both stores require one) — publish a page on fbcenumclaw.com based on `docs/PRIVACY.md`, which also has the store privacy-questionnaire answers
 - [ ] Screenshots and store descriptions
 - [ ] Apple review needs a demo login: create a member account for the reviewer

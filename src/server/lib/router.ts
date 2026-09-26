@@ -19,6 +19,7 @@ export type AuthUser = {
   role: UserRole;
   status: UserStatus;
   memberId: number | null;
+  usageOptOut: boolean;
   createdAt: Date;
 };
 

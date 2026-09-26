@@ -42,6 +42,7 @@ export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
     role: user.role,
     status: user.status,
     memberId: user.memberId,
+    usageOptOut: user.usageOptOut,
     createdAt: user.createdAt,
   });
   c.set("session", { id: session.id, kind: session.kind, label: session.label });

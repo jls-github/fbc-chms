@@ -36,6 +36,13 @@
       "when": 1790441413888,
       "tag": "0004_member_app",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790461413957,
+      "tag": "0005_usage_stats",
+      "breakpoints": true
     }
   ]
 }

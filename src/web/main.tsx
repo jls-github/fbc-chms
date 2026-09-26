@@ -65,6 +65,7 @@ const router = createBrowserRouter([
       { path: "attendance", element: <AttendancePage /> },
       { path: "checkin", lazy: () => import("./pages/checkin").then((m) => ({ Component: m.CheckinPage })) },
       { path: "app-accounts", lazy: () => import("./pages/app-accounts").then((m) => ({ Component: m.AppAccountsPage })) },
+      { path: "usage", lazy: () => import("./pages/usage").then((m) => ({ Component: m.UsagePage })) },
       { path: "settings", element: <SettingsPage /> },
       { path: "*", element: <NotFound /> },
     ],

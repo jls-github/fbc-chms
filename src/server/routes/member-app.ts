@@ -9,6 +9,7 @@ import type { Context } from "hono";
 import { z } from "zod";
 import { normalizePhone } from "@shared/phone";
 import {
+  AppEventInput,
   AppSignupInput,
   ChatGroup,
   ChatMessage,
@@ -36,6 +37,7 @@ import { rateLimiter } from "../lib/rate-limit";
 import { createRouter, type AppEnv } from "../lib/router";
 import { recentSermons } from "../lib/sermons";
 import { sign, verify } from "../lib/signing";
+import { countEvent, inBackground, mayTrack } from "../lib/usage";
 import { normalizeInviteCode } from "./app-accounts";
 import { serializeUser } from "./auth";
 
@@ -44,7 +46,9 @@ export const memberAppLimits = {
   signup: rateLimiter({ limit: 5, windowMs: HOUR }),
   claim: rateLimiter({ limit: 10, windowMs: HOUR }),
   post: rateLimiter({ limit: 20, windowMs: 60 * 1000 }),
+  events: rateLimiter({ limit: 120, windowMs: HOUR }),
   reset() {
+    this.events.reset();
     this.signup.reset();
     this.claim.reset();
     this.post.reset();
@@ -246,6 +250,12 @@ const serializeMessage = ({ message, author }: MessageRow, me: number): ChatMess
 
 const MeResponse = z.object({ user: User, profile: MyProfile });
 
+/** Count an anonymous event unless this person opted out or their browser asks not to be tracked. */
+function countIf(c: Context<AppEnv>, metric: string, dimension = "") {
+  if (!mayTrack(c.var.user.usageOptOut, { get: (n) => c.req.header(n) })) return;
+  inBackground(countEvent(c.var.deps.db, metric, dimension), `count ${metric}`);
+}
+
 export const memberAppRoutes = createRouter()
   .openapi(
     createRoute({
@@ -306,6 +316,7 @@ export const memberAppRoutes = createRouter()
     }),
     async (c) => {
       await requireMember(c);
+      countIf(c, "directory_view");
       const { db } = c.var.deps;
       const { entries } = await buildDirectory(db, [...DIRECTORY_STATUSES], (familyId, updatedAt) => signedPhotoUrl(db, familyId, updatedAt));
       return c.json({ entries }, 200);
@@ -331,6 +342,25 @@ export const memberAppRoutes = createRouter()
       } catch {
         throw new ApiError(502, "Sermons aren't available right now. Please try again later.");
       }
+    },
+  )
+  .openapi(
+    createRoute({
+      method: "post",
+      path: "/app/events",
+      tags: appTags,
+      summary: "Count an anonymous usage event",
+      description:
+        "Only a fixed set of events is accepted (currently opening a sermon). Nothing identifying is stored — see Usage statistics in docs/PRIVACY.md.",
+      security,
+      request: jsonBody(AppEventInput),
+      responses: { ...noContent, ...authErrors, ...tooMany, ...validationError },
+    }),
+    async (c) => {
+      const { event, sermonId } = c.req.valid("json");
+      if (memberAppLimits.events.hit(String(c.var.user.id))) throw new ApiError(429, "Too many events.");
+      countIf(c, event, sermonId ?? "");
+      return c.body(null, 204);
     },
   )
   .openapi(
@@ -424,6 +454,8 @@ export const memberAppRoutes = createRouter()
         .leftJoin(members, eq(members.id, groupMessages.memberId));
       let rows: MessageRow[];
       let hasMore = false;
+      // Opening a chat (not polling, not paging back) counts as one "group chat opened".
+      if (after === undefined && before === undefined) countIf(c, "group_open");
       if (after !== undefined) {
         rows = await base.where(and(eq(groupMessages.groupId, id), gt(groupMessages.id, after))).orderBy(asc(groupMessages.id)).limit(limit);
       } else {

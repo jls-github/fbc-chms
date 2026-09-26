@@ -11,6 +11,7 @@ import { authLimiter } from "../src/server/routes/auth";
 import { leaderReportLimits } from "../src/server/routes/report-links";
 import { memberAppLimits } from "../src/server/routes/member-app";
 import { resetSigningCache } from "../src/server/lib/signing";
+import { flushUsage, resetUsageCaches } from "../src/server/lib/usage";
 import { resetSermonCache } from "../src/server/lib/sermons";
 import type { Sermon } from "../src/shared/schemas";
 
@@ -27,16 +28,18 @@ export async function createTestContext() {
   const app = createApp({ db, mailer: async (m) => void mail.push(m), scrapeSermons: async () => sermons });
 
   async function reset() {
+    await flushUsage();
     authLimiter.reset();
     leaderReportLimits.reset();
     resetSigningCache();
+    resetUsageCaches();
     resetSermonCache();
     sermons.length = 0;
     memberAppLimits.reset();
     mail.length = 0;
     await db.execute(
       sql.raw(
-        "truncate group_reads, group_messages, app_settings, family_photos, checkins, report_links, attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
+        "truncate usage_counters, usage_actives, usage_active_totals, group_reads, group_messages, app_settings, family_photos, checkins, report_links, attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
       ),
     );
   }

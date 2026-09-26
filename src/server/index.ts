@@ -4,6 +4,7 @@ import { createApp } from "./app";
 import { connect } from "./db/client";
 import { env } from "./env";
 import { createMailer } from "./lib/mailer";
+import { rollUpUsage } from "./lib/usage";
 
 const database = connect(env.databaseUrl);
 
@@ -24,6 +25,11 @@ const app = createApp(
 const server = serve({ fetch: app.fetch, port: env.port }, (info) => {
   console.info(`FBC Church Management listening on http://localhost:${info.port}`);
 });
+
+// Close out finished usage periods (drop their hashes and keys) at startup and hourly.
+const rollUp = () => rollUpUsage(database.db).catch((err) => console.error("usage: roll-up failed", err));
+void rollUp();
+setInterval(rollUp, 60 * 60 * 1000).unref();
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {

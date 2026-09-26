@@ -29,6 +29,7 @@ export type User = {
   role: UserRole;
   status: UserStatus;
   memberId: number | null;
+  usageOptOut: boolean;
   createdAt: string;
 };
 

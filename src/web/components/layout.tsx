@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import {
+  Activity,
   Baby,
   Smartphone,
   BookUser,
@@ -35,6 +36,7 @@ const NAV = [
   { to: "/attendance", label: "Attendance", icon: ChartColumn },
   { to: "/checkin", label: "Kids check-in", icon: Baby },
   { to: "/app-accounts", label: "App accounts", icon: Smartphone },
+  { to: "/usage", label: "Usage", icon: Activity },
 ];
 
 /** Volunteers only ever see check-in (the API enforces this too). */

@@ -74,6 +74,11 @@ export default function ProfileScreen() {
     }
   }, [member?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const privacy = useMutation({
+    mutationFn: (usageOptOut: boolean) => api.patch<{ user: Me["user"] }>("/auth/me", { usageOptOut }),
+    onSuccess: ({ user }) => qc.setQueryData<Me>(["me"], (old) => (old ? { ...old, user } : old)),
+  });
+
   const [pw, setPw] = useState({ currentPassword: "", newPassword: "" });
   const changePassword = useMutation({
     mutationFn: () => api.post("/auth/password/change", pw),
@@ -129,6 +134,19 @@ export default function ProfileScreen() {
           loading={save.isPending}
           onPress={() => save.mutate(contact, { onSuccess: () => setSaved(true) })}
         />
+      </Section>
+
+      <Section
+        title="Privacy"
+        footer="We count things like “how many people used the app this week” — never who did what or what you looked at. Nothing is shared with anyone outside the church. Turning this off also removes your activity for the current day, week and month."
+      >
+        <Toggle
+          label="Share anonymous usage statistics"
+          value={!me.data?.user.usageOptOut}
+          onChange={(share) => privacy.mutate(!share)}
+          disabled={privacy.isPending}
+        />
+        {privacy.error && <FormError message={errorMessage(privacy.error)} />}
       </Section>
 
       <Section title="Password">

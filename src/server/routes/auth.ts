@@ -4,6 +4,7 @@ import { deleteCookie, setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import { z } from "zod";
 import {
+  AccountSettingsInput,
   ChangePasswordInput,
   ErrorResponse,
   ForgotPasswordInput,
@@ -25,6 +26,7 @@ import { authErrors, jsonBody, jsonContent, noContent, security, validationError
 import { clientIp } from "../lib/client-ip";
 import { rateLimiter } from "../lib/rate-limit";
 import { looksLikeEmail, normalizePhone } from "@shared/phone";
+import { flushUsage, forgetActive } from "../lib/usage";
 import { createRouter, type AppEnv, type AuthUser } from "../lib/router";
 
 export const authLimiter = rateLimiter({ limit: 10, windowMs: 5 * 60 * 1000 });
@@ -40,6 +42,7 @@ export const serializeUser = (u: AuthUser) => ({
   role: u.role,
   status: u.status,
   memberId: u.memberId,
+  usageOptOut: u.usageOptOut,
   createdAt: u.createdAt.toISOString(),
 });
 
@@ -208,6 +211,30 @@ export const authRoutes = createRouter()
     }),
     (c) =>
       c.json({ user: serializeUser(c.var.user), session: { kind: c.var.session.kind, label: c.var.session.label } }, 200),
+  )
+  .openapi(
+    createRoute({
+      method: "patch",
+      path: "/auth/me",
+      tags: ["Auth"],
+      summary: "Update my account settings",
+      description: "Currently: whether this account is left out of anonymous usage statistics.",
+      security,
+      request: jsonBody(AccountSettingsInput),
+      responses: { 200: jsonContent(UserEnvelope), ...authErrors, ...validationError },
+    }),
+    async (c) => {
+      if (c.var.session.kind === "kiosk") throw new ApiError(403, "You don't have access to that.");
+      const { usageOptOut } = c.req.valid("json");
+      const { db } = c.var.deps;
+      const [user] = await db.update(users).set({ usageOptOut }).where(eq(users.id, c.var.user.id)).returning();
+      // Opting out takes effect now, including for activity earlier in the current day/week/month.
+      if (usageOptOut) {
+        await flushUsage();
+        await forgetActive(db, c.var.user.id);
+      }
+      return c.json({ user: serializeUser(user!) }, 200);
+    },
   )
   .openapi(
     createRoute({

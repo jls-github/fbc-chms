@@ -97,9 +97,13 @@ export const User = z
     status: z.enum(USER_STATUSES),
     /** The directory person this account belongs to (member app). */
     memberId: z.number().nullable(),
+    /** Left out of anonymous usage statistics. */
+    usageOptOut: z.boolean(),
     createdAt: z.string(),
   })
   .meta({ id: "User" });
+
+export const AccountSettingsInput = z.object({ usageOptOut: z.boolean() });
 export type User = z.infer<typeof User>;
 
 export const MeResponse = z.object({
@@ -729,3 +733,40 @@ export const ChatMessagesQuery = z.object({
 });
 
 export const PostMessageInput = z.object({ body: z.string().trim().min(1, "Type a message").max(2000, "That message is too long") });
+
+// ---------------------------------------------------------------------------
+// Usage statistics (anonymous aggregates only)
+// ---------------------------------------------------------------------------
+
+export const AppEventInput = z.object({
+  event: z.enum(["sermon_open"]),
+  sermonId: z.string().regex(/^[a-z0-9]{3,20}$/i).optional(),
+});
+
+/** A count that's hidden (null) when it would describe fewer than 3 people. */
+const maskedCount = z.number().nullable();
+
+export const UsageReport = z
+  .object({
+    generatedAt: z.string(),
+    active: z.object({
+      app: z.object({ today: z.number(), week: z.number(), month: z.number() }),
+      staff: z.object({ today: z.number(), week: z.number(), month: z.number() }),
+    }),
+    /** Weekly active member-app users, oldest first (the current week is still in progress). */
+    weeklyApp: z.array(z.object({ weekStart: z.string(), count: z.number() })),
+    platformsThisMonth: z.object({ ios: maskedCount, android: maskedCount, web: maskedCount }),
+    last30Days: z.object({
+      directoryViews: z.number(),
+      sermonOpens: z.number(),
+      groupChatsOpened: z.number(),
+      messagesSent: z.number(),
+      kidsCheckedIn: z.number(),
+      leaderReports: z.number(),
+      signUps: z.number(),
+    }),
+    topSermons: z.array(z.object({ id: z.string(), title: z.string().nullable(), opens: z.number() })),
+    accounts: z.object({ active: z.number(), pending: z.number(), invited: z.number(), optedOut: z.number() }),
+  })
+  .meta({ id: "UsageReport" });
+export type UsageReport = z.infer<typeof UsageReport>;

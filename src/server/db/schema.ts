@@ -237,6 +237,8 @@ export const users = pgTable(
     signupLastName: text("signup_last_name"),
     inviteTokenHash: text("invite_token_hash"),
     inviteExpiresAt: timestamp("invite_expires_at", { withTimezone: true }),
+    /** Leave this account out of anonymous usage statistics. */
+    usageOptOut: boolean("usage_opt_out").notNull().default(false),
     reviewedBy: text("reviewed_by"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     ...timestamps,
@@ -282,6 +284,49 @@ export const groupReads = pgTable(
     lastReadMessageId: integer("last_read_message_id").notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.groupId, t.memberId] })],
+);
+
+// ---------------------------------------------------------------------------
+// Usage statistics (privacy-preserving; see src/server/lib/usage.ts)
+// ---------------------------------------------------------------------------
+
+/** Anonymous daily counters, e.g. ("2026-09-27", "sermon_open", "ggm4jyc", 4). No user identifiers. */
+export const usageCounters = pgTable(
+  "usage_counters",
+  {
+    day: date("day").notNull(),
+    metric: text("metric").notNull(),
+    dimension: text("dimension").notNull().default(""),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.metric, t.dimension] })],
+);
+
+/**
+ * Who has been active in the *current* day/week/month, as keyed hashes that
+ * can't be reversed. Each period has its own random key; when the period ends
+ * we keep only the total (usage_active_totals) and delete these rows and the key.
+ */
+export const usageActives = pgTable(
+  "usage_actives",
+  {
+    period: text("period", { enum: ["day", "week", "month"] }).notNull(),
+    periodStart: date("period_start").notNull(),
+    platform: text("platform").notNull(),
+    visitor: text("visitor").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.period, t.periodStart, t.platform, t.visitor] })],
+);
+
+export const usageActiveTotals = pgTable(
+  "usage_active_totals",
+  {
+    period: text("period", { enum: ["day", "week", "month"] }).notNull(),
+    periodStart: date("period_start").notNull(),
+    platform: text("platform").notNull(),
+    count: integer("count").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.period, t.periodStart, t.platform] })],
 );
 
 /** Small key/value store for server-generated settings (e.g. the URL-signing secret). */

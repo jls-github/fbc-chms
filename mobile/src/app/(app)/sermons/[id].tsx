@@ -7,11 +7,17 @@ import { longDate } from "../../../lib/format";
 import { useSermons } from "../../../lib/queries";
 import { fonts, useTheme } from "../../../lib/theme";
 import { router } from "expo-router";
+import { useEffect } from "react";
+import { api } from "../../../lib/api";
 
 export default function SermonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
   const { data, isLoading, error, refetch } = useSermons();
+  // Anonymous "sermon opened" count (see Privacy in Profile); fire once per sermon.
+  useEffect(() => {
+    if (id) api.post("/app/events", { event: "sermon_open", sermonId: id }).catch(() => undefined);
+  }, [id]);
   const header = <Stack.Screen options={{ title: "Sermon", headerStyle: { backgroundColor: t.card }, headerTintColor: t.brand, headerTitleStyle: { color: t.text } }} />;
 
   if (isLoading) return <>{header}<Loading /></>;

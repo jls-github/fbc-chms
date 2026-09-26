@@ -1,7 +1,8 @@
 import { ArrowUpRight, KeyRound, Plus, Shield, Smartphone, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { STAFF_ROLES, USER_ROLE_LABELS, type UserRole } from "@shared/constants";
-import { Badge, Button, Card, CardHeader, Field, IconButton, Input, Modal, PageHeader, PersonPicker, Select, useConfirm, useToast } from "../components/ui";
+import { Badge, Button, Card, CardHeader, Checkbox, Field, IconButton, Input, Modal, PageHeader, PersonPicker, Select, useConfirm, useToast } from "../components/ui";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, errorMessage } from "../lib/api";
 import { useForm } from "../lib/form";
 import { formatDay } from "../lib/format";
@@ -233,6 +234,35 @@ function StaffAccounts({ me }: { me: User }) {
   );
 }
 
+function UsagePrivacy() {
+  const { data: me } = useMe();
+  const qc = useQueryClient();
+  const toast = useToast();
+  const save = useMutation({
+    mutationFn: (usageOptOut: boolean) => api.patch("/auth/me", { usageOptOut }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["me"] });
+      toast("Saved");
+    },
+    onError: (e) => toast(errorMessage(e), "error"),
+  });
+  if (!me) return null;
+  return (
+    <Card>
+      <CardHeader title="Privacy" />
+      <div className="px-5 py-4">
+        <Checkbox
+          label="Share anonymous usage statistics"
+          description="Counts like “how many people used the app this week”. We never record who did what. Turning this off also removes your activity for the current day, week and month."
+          checked={!me.usageOptOut}
+          disabled={save.isPending}
+          onChange={(e) => save.mutate(!e.target.checked)}
+        />
+      </div>
+    </Card>
+  );
+}
+
 export function SettingsPage() {
   const { data: me } = useMe();
   if (!me) return null;
@@ -241,6 +271,7 @@ export function SettingsPage() {
       <PageHeader title="Settings" description={`Signed in as ${me.email}`} />
       <div className="space-y-6">
         <ChangePassword />
+        <UsagePrivacy />
         {me.role === "admin" ? (
           <StaffAccounts me={me} />
         ) : (

@@ -25,6 +25,8 @@ import { publicReportRoutes, reportLinkRoutes } from "./routes/report-links";
 import { kioskRoutes, rosterRoutes } from "./routes/checkin";
 import { appAccountRoutes } from "./routes/app-accounts";
 import { directoryRoutes } from "./routes/directory";
+import { usageRoutes } from "./routes/usage";
+import { inBackground, mayTrack, platformFor, recordActive } from "./lib/usage";
 import { memberAppRoutes, publicMemberAppRoutes } from "./routes/member-app";
 import { userRoutes } from "./routes/users";
 
@@ -70,6 +72,22 @@ const tooLarge = (c: Context) => c.json({ error: { message: "That upload is too 
 const jsonBodyLimit = bodyLimit({ maxSize: 1024 * 1024, onError: tooLarge });
 const photoBodyLimit = bodyLimit({ maxSize: (MAX_PHOTO_MB + 1) * 1024 * 1024, onError: tooLarge });
 
+/**
+ * Counts signed-in people as active (anonymously; see lib/usage.ts) after a
+ * successful request. Runs in the background so it never slows a response.
+ */
+const countActiveUse = createMiddleware<AppEnv>(async (c, next) => {
+  await next();
+  const session = c.get("session");
+  const user = c.get("user");
+  if (!session || !user || c.res.status >= 400) return;
+  // The request that changes the privacy setting isn't counted either way.
+  if (c.req.method === "PATCH" && c.req.path.endsWith("/auth/me")) return;
+  const platform = platformFor(session, c.req.path);
+  if (!platform || !mayTrack(user.usageOptOut, { get: (n) => c.req.header(n) })) return;
+  inBackground(recordActive(c.var.deps.db, user.id, platform), "record activity");
+});
+
 export function buildApi() {
   const api = createRouter();
   api.use("*", (c, next) =>
@@ -77,6 +95,7 @@ export function buildApi() {
   );
   api.use("*", limitRestrictedSessions);
   api.use("*", (c, next) => (c.req.path.endsWith("/photo") ? photoBodyLimit(c, next) : jsonBodyLimit(c, next)));
+  api.use("*", countActiveUse);
   api
     .route("/", authRoutes)
     .route("/", dashboardRoutes)
@@ -93,7 +112,8 @@ export function buildApi() {
     .route("/", directoryRoutes)
     .route("/", appAccountRoutes)
     .route("/", publicMemberAppRoutes)
-    .route("/", memberAppRoutes);
+    .route("/", memberAppRoutes)
+    .route("/", usageRoutes);
 
   api.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",

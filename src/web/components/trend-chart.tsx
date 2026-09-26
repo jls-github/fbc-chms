@@ -31,7 +31,10 @@ export function TrendChart({ points, label, height = 220 }: { points: Point[]; l
     const min = Math.min(...values, max);
     // Nice ticks: zero-based if the range is close to zero, otherwise padded.
     const lo = min < max * 0.4 ? 0 : Math.floor((min * 0.9) / 10) * 10;
-    const step = Math.max(1, Math.ceil((max - lo) / 4 / 5) * 5);
+    // A "nice" step (1, 2, 5, 10, 20, 50…) so four gridlines cover the data without wasted space.
+    const raw = Math.max((max - lo) / 4, 0.25);
+    const magnitude = 10 ** Math.floor(Math.log10(raw));
+    const step = Math.max(1, ([1, 2, 5, 10].find((m) => m * magnitude >= raw) ?? 10) * magnitude);
     const hi = lo + step * 4;
     return {
       x: (i: number) => pad.left + (points.length <= 1 ? innerW / 2 : (i / (points.length - 1)) * innerW),

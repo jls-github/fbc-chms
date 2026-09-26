@@ -9,7 +9,7 @@
     "dev": "concurrently -k -n api,web -c blue,magenta \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "tsx watch --env-file-if-exists=.env src/server/index.ts",
     "dev:web": "vite",
-    "build": "npm run build:web && npm run build:server",
+    "build": "npm run build:web && npm run build:app && npm run build:server",
     "build:web": "vite build",
     "build:server": "esbuild src/server/index.ts src/server/cli.ts --bundle --platform=node --format=esm --target=node22 --packages=external --outdir=dist/server --sourcemap",
     "start": "node --enable-source-maps dist/server/index.js",
@@ -17,9 +17,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npm run cli -- migrate",
     "db:seed": "npm run cli -- seed",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p mobile",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:app": "cd mobile && npx expo export --platform web --output-dir ../dist/member-app"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",

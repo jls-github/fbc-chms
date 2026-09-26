@@ -7,7 +7,8 @@ ministry teams, attendance, and a dashboard of who needs follow-up.
 OpenAPI spec, [Drizzle ORM](https://orm.drizzle.team) on PostgreSQL, and a
 React + Vite + Tailwind single-page app. One Docker image serves both.
 
-- Web app → `/`
+- Staff web app → `/`
+- Member app (web version) → `/app` — iOS/Android builds come from the same code in `mobile/`
 - REST API → `/api/v1` (used by the web app, and by native apps via bearer tokens)
 - Interactive API reference → `/api/docs` (spec at `/api/openapi.json`)
 
@@ -38,6 +39,7 @@ npm run dev          # API on :3000, web on http://localhost:5173
 src/shared/     API contract: Zod schemas + constants used by server and web
 src/server/     Hono app, routes/, auth/, db/ (schema, migrations runner, seed, Rails import)
 src/web/        React SPA: pages/, components/, lib/ (API client, queries)
+mobile/         Member app (Expo: iOS, Android, web) — see mobile/README.md
 drizzle/        Generated SQL migrations (applied automatically on boot)
 test/           API integration tests
 config/deploy.yml, .kamal/   Kamal deployment to DigitalOcean

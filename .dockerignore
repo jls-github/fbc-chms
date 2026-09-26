@@ -1,6 +1,8 @@
 .git
-node_modules
+**/node_modules
 dist
+mobile/dist
+mobile/.expo
 coverage
 .env
 .env.*

@@ -6,7 +6,8 @@ FROM node:22-slim AS build
 ENV GOMAXPROCS=1
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+COPY mobile/package.json mobile/package-lock.json ./mobile/
+RUN npm ci && npm ci --prefix mobile
 COPY . .
 RUN npm run build && npm prune --omit=dev
 

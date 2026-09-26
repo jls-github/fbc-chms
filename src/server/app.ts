@@ -4,6 +4,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { swaggerUI } from "@hono/swagger-ui";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { compress } from "hono/compress";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { sql } from "drizzle-orm";
@@ -22,7 +23,9 @@ import { memberRoutes } from "./routes/members";
 import { teamRoutes } from "./routes/teams";
 import { publicReportRoutes, reportLinkRoutes } from "./routes/report-links";
 import { kioskRoutes, rosterRoutes } from "./routes/checkin";
+import { appAccountRoutes } from "./routes/app-accounts";
 import { directoryRoutes } from "./routes/directory";
+import { memberAppRoutes, publicMemberAppRoutes } from "./routes/member-app";
 import { userRoutes } from "./routes/users";
 
 export const API_VERSION = "v1";
@@ -41,19 +44,24 @@ const v1 = (p: string) => `/api/${API_VERSION}${p}`;
  * Kiosk devices and check-in volunteers see children's details, so they get
  * the narrowest possible access:
  * - a kiosk session can only use the kiosk endpoints (plus who-am-I and sign-out);
- * - a volunteer can only use the check-in roster (plus their own account).
+ * - a volunteer can only use the check-in roster (plus their own account);
+ * - a church member can only use the member app (/app) and their own account.
+ * Anyone linked to a person may also use the member app.
  */
 const limitRestrictedSessions = createMiddleware<AppEnv>(async (c, next) => {
   const path = c.req.path;
   const session = c.get("session");
   if (!session) return next(); // public endpoints
   const user = c.get("user");
+  const memberApp = path.startsWith(v1("/app/"));
   const allowed =
     session.kind === "kiosk"
       ? path.startsWith(v1("/kiosk/")) || path === v1("/auth/me") || path === v1("/auth/logout")
-      : user.role === "volunteer"
-        ? path.startsWith(v1("/auth/")) || (path.startsWith(v1("/checkin/")) && !path.startsWith(v1("/checkin/kiosks")))
-        : true;
+      : user.role === "member"
+        ? path.startsWith(v1("/auth/")) || memberApp
+        : user.role === "volunteer"
+          ? path.startsWith(v1("/auth/")) || memberApp || (path.startsWith(v1("/checkin/")) && !path.startsWith(v1("/checkin/kiosks")))
+          : true;
   if (!allowed) throw new ApiError(403, "You don't have access to that.");
   await next();
 });
@@ -82,7 +90,10 @@ export function buildApi() {
     .route("/", reportLinkRoutes)
     .route("/", kioskRoutes)
     .route("/", rosterRoutes)
-    .route("/", directoryRoutes);
+    .route("/", directoryRoutes)
+    .route("/", appAccountRoutes)
+    .route("/", publicMemberAppRoutes)
+    .route("/", memberAppRoutes);
 
   api.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",
@@ -112,9 +123,9 @@ export function openApiDocument(api: ReturnType<typeof buildApi>) {
   });
 }
 
-const CSP = [
+const csp = (imgSrc: string) => [
   "default-src 'self'",
-  "img-src 'self' data:",
+  `img-src ${imgSrc}`,
   "style-src 'self' 'unsafe-inline'",
   "script-src 'self'",
   "connect-src 'self'",
@@ -124,16 +135,24 @@ const CSP = [
   "form-action 'self'",
 ].join("; ");
 
-export function createApp(deps: AppDeps, opts: { staticDir?: string; log?: boolean } = {}) {
+const CSP = csp("'self' data:");
+/** The member app also shows sermon artwork hosted by Subsplash. */
+const MEMBER_APP_CSP = csp("'self' data: blob: https://images.subsplash.com");
+
+export function createApp(deps: AppDeps, opts: { staticDir?: string; memberAppDir?: string; log?: boolean } = {}) {
   const app = new Hono<AppEnv>();
 
   if (opts.log) app.use("*", logger());
+  // Text responses (the web bundles, JSON) are gzipped; images are left alone.
+  app.use("*", compress());
   app.use("*", secureHeaders({ contentSecurityPolicy: undefined, crossOriginEmbedderPolicy: false }));
   app.use("*", async (c, next) => {
     c.set("deps", deps);
     await next();
     // Swagger UI pulls its assets from a CDN, so it gets the default (no CSP).
-    if (!c.req.path.startsWith("/api/docs")) c.header("Content-Security-Policy", CSP);
+    const path = c.req.path;
+    if (path === "/app" || path.startsWith("/app/")) c.header("Content-Security-Policy", MEMBER_APP_CSP);
+    else if (!path.startsWith("/api/docs")) c.header("Content-Security-Policy", CSP);
   });
 
   app.get("/up", async (c) => {
@@ -147,6 +166,25 @@ export function createApp(deps: AppDeps, opts: { staticDir?: string; log?: boole
   app.get("/api/docs", swaggerUI({ url: "/api/openapi.json", title: "FBC Church Management API" }));
   app.route(`/api/${API_VERSION}`, api);
   app.all("/api/*", (c) => c.json({ error: { message: "Not found" } }, 404));
+
+  // The member app's web version (Expo export, built with baseUrl "/app").
+  if (opts.memberAppDir) {
+    const root = opts.memberAppDir;
+    app.use("/app/_expo/*", async (c, next) => {
+      await next();
+      if (c.res.status === 200) c.header("Cache-Control", "public, max-age=31536000, immutable");
+    });
+    app.use("/app/*", serveStatic({ root, rewriteRequestPath: (p) => p.replace(/^\/app/, "") }));
+    app.get("/app/_expo/*", (c) => c.text("Not found", 404));
+    let appShell: string | undefined;
+    const memberAppShell = async (c: Context) => {
+      appShell ??= await readFile(join(root, "index.html"), "utf8");
+      c.header("Cache-Control", "no-cache");
+      return c.html(appShell);
+    };
+    app.get("/app", memberAppShell);
+    app.get("/app/*", memberAppShell);
+  }
 
   if (opts.staticDir) {
     const root = opts.staticDir;

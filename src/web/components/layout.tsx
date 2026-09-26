@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import {
   Baby,
+  Smartphone,
   BookUser,
   ChartColumn,
   Church,
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { useLogout, useMe } from "../lib/queries";
+import { useAppAccounts, useLogout, useMe } from "../lib/queries";
 import { CommandPalette } from "./command-palette";
 import { IconButton, useToast } from "./ui";
 
@@ -33,6 +34,7 @@ const NAV = [
   { to: "/teams", label: "Teams", icon: HandHeart },
   { to: "/attendance", label: "Attendance", icon: ChartColumn },
   { to: "/checkin", label: "Kids check-in", icon: Baby },
+  { to: "/app-accounts", label: "App accounts", icon: Smartphone },
 ];
 
 /** Volunteers only ever see check-in (the API enforces this too). */
@@ -91,6 +93,8 @@ function Brand() {
 
 function SidebarContent({ onNavigate, onSearch }: { onNavigate?: () => void; onSearch: () => void }) {
   const { data: me } = useMe();
+  const isStaff = me?.role === "admin" || me?.role === "staff";
+  const pending = useAppAccounts("pending", isStaff).data?.pendingCount ?? 0;
   const logout = useLogout();
   const navigate = useNavigate();
   const toast = useToast();
@@ -127,6 +131,11 @@ function SidebarContent({ onNavigate, onSearch }: { onNavigate?: () => void; onS
               <>
                 <Icon className={clsx("size-[18px]", isActive ? "text-brand-600 dark:text-brand-400" : "text-zinc-400")} aria-hidden />
                 {label}
+                {to === "/app-accounts" && pending > 0 && (
+                  <span className="ml-auto rounded-full bg-brand-600 px-1.5 text-[11px] font-semibold text-white tabular-nums" aria-label={`${pending} waiting for review`}>
+                    {pending}
+                  </span>
+                )}
               </>
             )}
           </NavLink>
@@ -193,6 +202,11 @@ export function AppLayout() {
   if (isLoading) return <div className="min-h-screen" aria-busy="true" />;
   if (!me) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   if (me.sessionKind === "kiosk") return <Navigate to="/kiosk" replace />;
+  if (me.role === "member") {
+    // Church members use the member app, not the staff site.
+    window.location.replace("/app");
+    return null;
+  }
   if (me.role === "volunteer" && !VOLUNTEER_PATHS.some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/checkin" replace />;
   }

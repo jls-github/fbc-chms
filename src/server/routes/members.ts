@@ -3,7 +3,7 @@ import { and, eq, ilike, ne, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { IdParam, MemberDetail, MemberInput, MemberListQuery, MemberPatch, MemberSummary } from "@shared/schemas";
 import type { Db } from "../db/client";
-import { members } from "../db/schema";
+import { members, users } from "../db/schema";
 import { notFound } from "../lib/errors";
 import { authErrors, jsonBody, jsonContent, noContent, notFoundError, security, validationError } from "../lib/openapi";
 import { createRouter } from "../lib/router";
@@ -34,7 +34,20 @@ async function loadDetail(db: Db, id: number) {
         where: and(eq(members.familyId, member.familyId), ne(members.id, member.id)),
       })
     : [];
-  return { ...memberSummary(member), household: household.map(personRef).sort(byName) };
+  const [account] = await db.select().from(users).where(eq(users.memberId, member.id));
+  return {
+    ...memberSummary(member),
+    household: household.map(personRef).sort(byName),
+    appAccount: account
+      ? {
+          id: account.id,
+          status: account.status,
+          email: account.email,
+          phone: account.phone,
+          inviteExpiresAt: account.status === "invited" ? (account.inviteExpiresAt?.toISOString() ?? null) : null,
+        }
+      : null,
+  };
 }
 
 const tags = ["Members"];

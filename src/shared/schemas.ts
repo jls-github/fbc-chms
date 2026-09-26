@@ -4,7 +4,16 @@
  * a future native mobile client).
  */
 import { z } from "zod";
-import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, LINK_REPORT_EVENT_TYPES, MEMBER_STATUSES, SESSION_KINDS, USER_ROLES } from "./constants";
+import {
+  ATTENDANCE_EVENT_TYPES,
+  ATTENDANCE_SOURCES,
+  LINK_REPORT_EVENT_TYPES,
+  MEMBER_STATUSES,
+  SESSION_KINDS,
+  STAFF_ROLES,
+  USER_ROLES,
+  USER_STATUSES,
+} from "./constants";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -54,14 +63,20 @@ const timestamps = { createdAt: z.string(), updatedAt: z.string() };
 // Auth & users
 // ---------------------------------------------------------------------------
 
-export const LoginInput = z.object({
-  email: z.string().trim().email("Enter a valid email address"),
+/** Sign in with an email address or a phone number (`email` is accepted as an older alias). */
+const loginShape = {
+  identifier: z.string().trim().max(254).optional(),
+  email: z.string().trim().max(254).optional(),
   password: z.string().min(1, "Password is required"),
-});
+};
+const needsIdentifier = (v: { identifier?: string; email?: string }) => !!(v.identifier || v.email);
+const identifierMessage = { message: "Enter your email or phone number", path: ["identifier"] };
 
-export const TokenInput = LoginInput.extend({
-  deviceName: z.string().trim().max(100).optional(),
-});
+export const LoginInput = z.object(loginShape).refine(needsIdentifier, identifierMessage);
+
+export const TokenInput = z
+  .object({ ...loginShape, deviceName: z.string().trim().max(100).optional() })
+  .refine(needsIdentifier, identifierMessage);
 
 export const ForgotPasswordInput = z.object({ email: z.string().trim().email() });
 
@@ -74,12 +89,18 @@ export const ChangePasswordInput = z.object({ currentPassword: z.string().min(1)
 export const User = z
   .object({
     id: z.number(),
-    email: z.string(),
+    email: z.string().nullable(),
+    /** Digits only. */
+    phone: z.string().nullable(),
     name: z.string().nullable(),
     role: z.enum(USER_ROLES),
+    status: z.enum(USER_STATUSES),
+    /** The directory person this account belongs to (member app). */
+    memberId: z.number().nullable(),
     createdAt: z.string(),
   })
   .meta({ id: "User" });
+export type User = z.infer<typeof User>;
 
 export const MeResponse = z.object({
   user: User,
@@ -88,13 +109,13 @@ export const MeResponse = z.object({
 });
 
 export const UserPatch = z
-  .object({ name: optionalText(), role: z.enum(USER_ROLES) })
+  .object({ name: optionalText(), role: z.enum(STAFF_ROLES) })
   .partial();
 
 export const UserInput = z.object({
   email: z.string().trim().email("Enter a valid email address"),
   name: optionalText(),
-  role: z.enum(USER_ROLES).default("staff"),
+  role: z.enum(STAFF_ROLES).default("staff"),
   password,
 });
 
@@ -186,6 +207,16 @@ export type PersonRef = z.infer<typeof PersonRef>;
 
 export const MemberDetail = MemberSummary.extend({
   household: z.array(PersonRef),
+  /** Their member-app account, if any. */
+  appAccount: z
+    .object({
+      id: z.number(),
+      status: z.enum(USER_STATUSES),
+      email: z.string().nullable(),
+      phone: z.string().nullable(),
+      inviteExpiresAt: z.string().nullable(),
+    })
+    .nullable(),
 }).meta({ id: "MemberDetail" });
 export type MemberDetail = z.infer<typeof MemberDetail>;
 
@@ -514,3 +545,181 @@ export const DirectoryResponse = z.object({
   optedOut: z.number(),
 });
 export type DirectoryResponse = z.infer<typeof DirectoryResponse>;
+
+// ---------------------------------------------------------------------------
+// Member app: accounts
+// ---------------------------------------------------------------------------
+
+const optionalPhone = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((v) => (v ? v : null))
+  .refine((v) => v === null || v.replace(/\D/g, "").length >= 10, "Enter all 10 digits of your phone number");
+
+export const AppSignupInput = z
+  .object({
+    firstName: requiredText("First name", 100),
+    lastName: requiredText("Last name", 100),
+    email: z
+      .union([z.string().trim().email("Enter a valid email address"), z.literal("")])
+      .nullish()
+      .transform((v) => (v ? v.toLowerCase() : null)),
+    phone: optionalPhone,
+    password,
+    deviceName: z.string().trim().max(100).optional(),
+  })
+  .refine((v) => v.email || v.phone, { message: "Enter an email address or a phone number", path: ["email"] });
+
+export const ClaimInviteInput = z.object({
+  code: z.string().trim().min(6, "Enter the code from your invitation").max(64),
+  password,
+  deviceName: z.string().trim().max(100).optional(),
+});
+
+/** A person in the directory who might be the one behind a self-signup. */
+export const MatchCandidate = z
+  .object({
+    member: PersonRef.extend({ email: z.string().nullable(), phone: z.string().nullable() }),
+    score: z.number(),
+    reasons: z.array(z.string()),
+    /** Set when this person already has an app account. */
+    existingAccount: z.object({ id: z.number(), status: z.enum(USER_STATUSES) }).nullable(),
+  })
+  .meta({ id: "MatchCandidate" });
+export type MatchCandidate = z.infer<typeof MatchCandidate>;
+
+export const AppAccount = z
+  .object({
+    id: z.number(),
+    email: z.string().nullable(),
+    phone: z.string().nullable(),
+    role: z.enum(USER_ROLES),
+    status: z.enum(USER_STATUSES),
+    signupName: z.string().nullable(),
+    member: PersonRef.nullable(),
+    createdAt: z.string(),
+    reviewedBy: z.string().nullable(),
+    reviewedAt: z.string().nullable(),
+    inviteExpiresAt: z.string().nullable(),
+    /** Only for pending accounts: likely matches, best first. */
+    suggestions: z.array(MatchCandidate),
+  })
+  .meta({ id: "AppAccount" });
+export type AppAccount = z.infer<typeof AppAccount>;
+
+export const AppAccountQuery = z.object({ status: z.enum([...USER_STATUSES, "all"]).default("pending") });
+
+export const ApproveAccountInput = z.union([
+  z.object({ memberId: z.number().int().positive() }),
+  z.object({ createMember: z.literal(true) }),
+]);
+
+export const LinkAccountInput = z.object({ memberId: z.number().int().positive().nullable() });
+
+export const InviteResponse = z
+  .object({ code: z.string(), link: z.string(), expiresAt: z.string(), emailed: z.boolean() })
+  .meta({ id: "InviteResponse" });
+export type InviteResponse = z.infer<typeof InviteResponse>;
+
+// ---------------------------------------------------------------------------
+// Member app: content
+// ---------------------------------------------------------------------------
+
+export const DirectoryPrivacy = z.object({
+  directoryOptOut: z.boolean(),
+  dirShowPhone: z.boolean(),
+  dirShowEmail: z.boolean(),
+  dirShowAddress: z.boolean(),
+  dirShowBirthday: z.boolean(),
+});
+
+export const MyProfile = z
+  .object({
+    member: z
+      .object({
+        id: z.number(),
+        firstName: z.string(),
+        lastName: z.string(),
+        email: z.string().nullable(),
+        phone: z.string().nullable(),
+        address1: z.string().nullable(),
+        address2: z.string().nullable(),
+        city: z.string().nullable(),
+        state: z.string().nullable(),
+        postalCode: z.string().nullable(),
+        birthdate: z.string().nullable(),
+        householdName: z.string().nullable(),
+      })
+      .extend(DirectoryPrivacy.shape)
+      .nullable(),
+  })
+  .meta({ id: "MyProfile" });
+export type MyProfile = z.infer<typeof MyProfile>;
+
+export const MyProfilePatch = z
+  .object({
+    email: z
+      .union([z.string().trim().email("Enter a valid email address"), z.literal("")])
+      .nullish()
+      .transform((v) => (v ? v : null)),
+    phone: optionalText(40),
+    address1: optionalText(),
+    address2: optionalText(),
+    city: optionalText(),
+    state: optionalText(),
+    postalCode: optionalText(20),
+    birthdate: optionalDate,
+  })
+  .extend(DirectoryPrivacy.shape)
+  .partial();
+
+export const Sermon = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    date: z.string().nullable(),
+    speaker: z.string().nullable(),
+    series: z.string().nullable(),
+    imageUrl: z.string().nullable(),
+    /** The sermon's page on fbcenumclaw.com. */
+    url: z.string(),
+    /** Subsplash player that can be embedded or opened directly. */
+    playerUrl: z.string(),
+  })
+  .meta({ id: "Sermon" });
+export type Sermon = z.infer<typeof Sermon>;
+
+export const ChatGroup = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    meetingTime: z.string().nullable(),
+    memberCount: z.number(),
+    unread: z.number(),
+    lastMessage: z.object({ body: z.string(), authorName: z.string(), createdAt: z.string() }).nullable(),
+  })
+  .meta({ id: "ChatGroup" });
+export type ChatGroup = z.infer<typeof ChatGroup>;
+
+export const ChatMessage = z
+  .object({
+    id: z.number(),
+    body: z.string(),
+    createdAt: z.string(),
+    author: z.object({ memberId: z.number().nullable(), name: z.string() }),
+    mine: z.boolean(),
+    deleted: z.boolean(),
+  })
+  .meta({ id: "ChatMessage" });
+export type ChatMessage = z.infer<typeof ChatMessage>;
+
+export const ChatMessagesQuery = z.object({
+  /** Only messages newer than this id (for polling). */
+  after: z.coerce.number().int().nonnegative().optional(),
+  /** Only messages older than this id (for loading history). */
+  before: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+
+export const PostMessageInput = z.object({ body: z.string().trim().min(1, "Type a message").max(2000, "That message is too long") });

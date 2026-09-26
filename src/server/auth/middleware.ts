@@ -31,7 +31,19 @@ export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
   if (!found) throw new ApiError(401, "Your session has expired. Please sign in again.");
 
   const { user, session } = found;
-  c.set("user", { id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt });
+  if (user.status === "disabled" || user.status === "invited") {
+    throw new ApiError(401, "This account can't sign in right now. Please contact the church office.");
+  }
+  c.set("user", {
+    id: user.id,
+    email: user.email,
+    phone: user.phone,
+    name: user.name,
+    role: user.role,
+    status: user.status,
+    memberId: user.memberId,
+    createdAt: user.createdAt,
+  });
   c.set("session", { id: session.id, kind: session.kind, label: session.label });
   await next();
 });

@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Cake, CircleAlert, HandHeart, House, Mail, MapPin, Pencil, Phone, Plus, Trash2, UsersRound, X } from "lucide-react";
+import { Cake, CircleAlert, HandHeart, Smartphone, House, Mail, MapPin, Pencil, Phone, Plus, Trash2, UsersRound, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { MEMBER_STATUSES, MEMBER_STATUS_LABELS, type MemberStatus } from "@shared/constants";
@@ -28,7 +28,10 @@ import {
 import { api, errorMessage } from "../lib/api";
 import { useForm } from "../lib/form";
 import { age, formatDay, fullName } from "../lib/format";
-import { useDeleteMember, useFamilies, useGroups, useMember, useSaveFamily, useSaveMember, useTeams } from "../lib/queries";
+import { useAppAccountActions, useDeleteMember, useFamilies, useGroups, useMember, useSaveFamily, useSaveMember, useTeams } from "../lib/queries";
+import { formatPhone } from "@shared/phone";
+import type { InviteResponse } from "@shared/schemas";
+import { InvitationDialog } from "./app-accounts";
 
 function useIdParam() {
   return Number(useParams().id);
@@ -155,6 +158,44 @@ function MembershipsCard({ member }: { member: MemberDetail }) {
   );
 }
 
+function MemberAppCard({ member }: { member: MemberDetail }) {
+  const { invite } = useAppAccountActions();
+  const toast = useToast();
+  const [invitation, setInvitation] = useState<InviteResponse | null>(null);
+  const account = member.appAccount;
+  const status = !account
+    ? "Not using the app yet."
+    : account.status === "active"
+      ? `Using the app (signs in with ${account.email ?? formatPhone(account.phone)}).`
+      : account.status === "invited"
+        ? `Invited — hasn't set up their account yet${account.inviteExpiresAt ? ` (code expires ${formatDay(account.inviteExpiresAt.slice(0, 10))})` : ""}.`
+        : account.status === "disabled"
+          ? "Their app account is turned off."
+          : "Signed up and waiting for review.";
+  const canInvite = !account || account.status === "invited";
+  return (
+    <Card>
+      <CardHeader
+        title="Member app"
+        description={status}
+        action={
+          canInvite && (
+            <Button
+              size="sm"
+              icon={<Smartphone className="size-4" />}
+              loading={invite.isPending}
+              onClick={() => invite.mutate(member.id, { onSuccess: setInvitation, onError: (e) => toast(errorMessage(e), "error") })}
+            >
+              {account ? "New code" : "Invite to app"}
+            </Button>
+          )
+        }
+      />
+      {invitation && <InvitationDialog invitation={invitation} name={member.firstName} onClose={() => setInvitation(null)} />}
+    </Card>
+  );
+}
+
 export function MemberPage() {
   const id = useIdParam();
   const { data: member, isLoading, error } = useMember(id);
@@ -270,6 +311,8 @@ export function MemberPage() {
               )}
             </div>
           </Card>
+
+          {!member.isChild && <MemberAppCard member={member} />}
 
           {member.notes && (
             <Card>

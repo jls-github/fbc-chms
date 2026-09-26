@@ -29,6 +29,13 @@
       "when": 1790439882894,
       "tag": "0003_directory_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790441413888,
+      "tag": "0004_member_app",
+      "breakpoints": true
     }
   ]
 }

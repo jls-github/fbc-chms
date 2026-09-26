@@ -14,7 +14,11 @@ if (process.env.MIGRATE_ON_BOOT !== "false") {
 
 const app = createApp(
   { db: database.db, mailer: createMailer() },
-  { staticDir: env.isProduction ? resolve(process.cwd(), "dist/web") : undefined, log: true },
+  {
+    staticDir: env.isProduction ? resolve(process.cwd(), "dist/web") : undefined,
+    memberAppDir: env.isProduction ? resolve(process.cwd(), "dist/member-app") : undefined,
+    log: true,
+  },
 );
 
 const server = serve({ fetch: app.fetch, port: env.port }, (info) => {

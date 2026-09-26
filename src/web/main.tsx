@@ -63,6 +63,7 @@ const router = createBrowserRouter([
       { path: "teams/:id", element: <TeamPage /> },
       { path: "attendance", element: <AttendancePage /> },
       { path: "checkin", lazy: () => import("./pages/checkin").then((m) => ({ Component: m.CheckinPage })) },
+      { path: "app-accounts", lazy: () => import("./pages/app-accounts").then((m) => ({ Component: m.AppAccountsPage })) },
       { path: "settings", element: <SettingsPage /> },
       { path: "*", element: <NotFound /> },
     ],

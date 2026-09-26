@@ -4,7 +4,7 @@
  * a future native mobile client).
  */
 import { z } from "zod";
-import { ATTENDANCE_EVENT_TYPES, MEMBER_STATUSES, USER_ROLES } from "./constants";
+import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, LINK_REPORT_EVENT_TYPES, MEMBER_STATUSES, USER_ROLES } from "./constants";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -274,10 +274,30 @@ export const AttendanceReport = z
     date: z.string(),
     attendance: z.number(),
     notes: z.string().nullable(),
+    source: z.enum(ATTENDANCE_SOURCES),
     ...timestamps,
   })
   .meta({ id: "AttendanceReport" });
 export type AttendanceReport = z.infer<typeof AttendanceReport>;
+
+/** What a leader fills in on a public report link. */
+export const LeaderReportInput = z.object({
+  date: isoDate,
+  attendance: z.coerce.number().int().min(0, "Can't be negative").max(1000, "That's more than we expect — double-check the number"),
+  notes: optionalText(2000),
+  /** Honeypot: hidden from people, so anything here means a bot. */
+  website: z.string().optional(),
+});
+export type LeaderReportInput = z.input<typeof LeaderReportInput>;
+
+export const LeaderReportForm = z
+  .object({ eventType: z.enum(LINK_REPORT_EVENT_TYPES), label: z.string() })
+  .meta({ id: "LeaderReportForm" });
+
+export const ReportLink = z
+  .object({ eventType: z.enum(LINK_REPORT_EVENT_TYPES), token: z.string(), path: z.string() })
+  .meta({ id: "ReportLink" });
+export type ReportLink = z.infer<typeof ReportLink>;
 
 export const AttendanceListQuery = z.object({
   eventType: z.enum(ATTENDANCE_EVENT_TYPES).optional(),

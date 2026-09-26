@@ -25,3 +25,10 @@ export const ATTENDANCE_EVENT_LABELS: Record<AttendanceEventType, string> = {
  */
 export const USER_ROLES = ["admin", "staff"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
+
+/** Gatherings whose leaders can submit attendance through a shareable, no-login link. */
+export const LINK_REPORT_EVENT_TYPES = ["community_group", "discipleship_meeting"] as const satisfies readonly AttendanceEventType[];
+export type LinkReportEventType = (typeof LINK_REPORT_EVENT_TYPES)[number];
+
+export const ATTENDANCE_SOURCES = ["staff", "leader_link"] as const;
+export type AttendanceSource = (typeof ATTENDANCE_SOURCES)[number];

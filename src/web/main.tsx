@@ -9,6 +9,7 @@ import { AttendancePage } from "./pages/attendance";
 import { ForgotPasswordPage, LoginPage, ResetPasswordPage } from "./pages/auth";
 import { DashboardPage } from "./pages/dashboard";
 import { HouseholdPage, HouseholdsPage } from "./pages/households";
+import { LeaderReportPage } from "./pages/leader-report";
 import { MemberFormPage, MemberPage } from "./pages/member";
 import { GroupPage, GroupsPage, TeamPage, TeamsPage } from "./pages/ministry";
 import { PeoplePage } from "./pages/people";
@@ -42,6 +43,7 @@ const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
+  { path: "/r/:token", element: <LeaderReportPage /> },
   {
     element: <AppLayout />,
     children: [

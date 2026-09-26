@@ -8,6 +8,7 @@ import { MIGRATIONS_FOLDER, type Db } from "../src/server/db/client";
 import * as schema from "../src/server/db/schema";
 import type { Mail } from "../src/server/lib/mailer";
 import { authLimiter } from "../src/server/routes/auth";
+import { leaderReportLimits } from "../src/server/routes/report-links";
 
 export const PASSWORD = "correct horse battery";
 
@@ -22,10 +23,11 @@ export async function createTestContext() {
 
   async function reset() {
     authLimiter.reset();
+    leaderReportLimits.reset();
     mail.length = 0;
     await db.execute(
       sql.raw(
-        "truncate attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
+        "truncate report_links, attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
       ),
     );
   }

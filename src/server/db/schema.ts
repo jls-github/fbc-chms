@@ -11,7 +11,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { ATTENDANCE_EVENT_TYPES, MEMBER_STATUSES, USER_ROLES } from "@shared/constants";
+import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, MEMBER_STATUSES, USER_ROLES } from "@shared/constants";
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -132,10 +132,23 @@ export const attendanceReports = pgTable(
     date: date("date").notNull(),
     attendance: integer("attendance").notNull(),
     notes: text("notes"),
+    /** Entered by staff in the app, or submitted by a leader through a report link. */
+    source: text("source", { enum: ATTENDANCE_SOURCES }).notNull().default("staff"),
     ...timestamps,
   },
   (t) => [index("attendance_reports_type_date_idx").on(t.eventType, t.date)],
 );
+
+/**
+ * One shareable, no-login submission link per gathering type. The token is the
+ * only thing standing between the internet and the form, so it's long and
+ * random; admins can rotate it if a link leaks.
+ */
+export const reportLinks = pgTable("report_links", {
+  eventType: attendanceEventType("event_type").primaryKey(),
+  token: text("token").notNull().unique(),
+  ...timestamps,
+});
 
 // ---------------------------------------------------------------------------
 // Staff accounts & authentication

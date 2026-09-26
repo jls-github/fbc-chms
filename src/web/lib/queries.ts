@@ -9,6 +9,7 @@ import type {
   MemberDetail,
   MemberInput,
   MemberSummary,
+  ReportLink,
   SearchResult,
   Team,
 } from "@shared/schemas";
@@ -217,6 +218,21 @@ export function useDeleteAttendance() {
   return useMutation({
     mutationFn: (id: number) => api.delete(`/attendance/${id}`),
     onSuccess: () => invalidate([["attendance"], ["dashboard"]]),
+  });
+}
+
+export const useReportLinks = () =>
+  useQuery({
+    queryKey: ["report-links"],
+    queryFn: () => api.get<{ links: ReportLink[] }>("/report-links").then((r) => r.links),
+    staleTime: Infinity,
+  });
+
+export function useRotateReportLink() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (eventType: string) => api.post(`/report-links/${eventType}/rotate`),
+    onSuccess: () => invalidate([["report-links"]]),
   });
 }
 

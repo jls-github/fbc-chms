@@ -21,6 +21,7 @@ import { passwordResets, sessions, users } from "../db/schema";
 import { env } from "../env";
 import { ApiError } from "../lib/errors";
 import { authErrors, jsonBody, jsonContent, noContent, security, validationError } from "../lib/openapi";
+import { clientIp } from "../lib/client-ip";
 import { rateLimiter } from "../lib/rate-limit";
 import { createRouter, type AppEnv, type AuthUser } from "../lib/router";
 
@@ -37,7 +38,6 @@ export const serializeUser = (u: AuthUser) => ({
   createdAt: u.createdAt.toISOString(),
 });
 
-const clientIp = (c: Context) => c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
 async function authenticate(c: Context<AppEnv>, db: Db, email: string, password: string) {
   if (authLimiter.hit(`${clientIp(c)}:${email.toLowerCase()}`)) {

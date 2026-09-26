@@ -1,10 +1,11 @@
-import { ChartColumn, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChartColumn, Copy, LinkIcon, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
-import { ATTENDANCE_EVENT_LABELS, ATTENDANCE_EVENT_TYPES, type AttendanceEventType } from "@shared/constants";
+import { ATTENDANCE_EVENT_LABELS, ATTENDANCE_EVENT_TYPES, LINK_REPORT_EVENT_TYPES, type AttendanceEventType, type LinkReportEventType } from "@shared/constants";
 import type { AttendanceReport } from "@shared/schemas";
 import { TrendChart } from "../components/trend-chart";
 import {
+  Badge,
   Button,
   Card,
   CardHeader,
@@ -25,9 +26,73 @@ import {
 import { errorMessage } from "../lib/api";
 import { useForm } from "../lib/form";
 import { formatDay, formatShortDay, todayIso } from "../lib/format";
-import { useAttendance, useDeleteAttendance, useSaveAttendance } from "../lib/queries";
+import { useAttendance, useDeleteAttendance, useMe, useReportLinks, useRotateReportLink, useSaveAttendance } from "../lib/queries";
 import { TREND_OPTIONS, useTrendMode, windowNote } from "../lib/trend-mode";
 import { withRollingAverage } from "@shared/rolling";
+
+/** The shareable no-login form link for leaders of this gathering type. */
+function LeaderLinkCard({ eventType }: { eventType: LinkReportEventType }) {
+  const { data: links } = useReportLinks();
+  const { data: me } = useMe();
+  const rotate = useRotateReportLink();
+  const confirm = useConfirm();
+  const toast = useToast();
+  const link = links?.find((l) => l.eventType === eventType);
+  if (!link) return null;
+  const url = `${window.location.origin}${link.path}`;
+
+  return (
+    <Card className="mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-1.5 text-sm font-medium">
+          <LinkIcon className="size-4 text-zinc-400" aria-hidden /> Leader report link
+        </p>
+        <p className="mt-0.5 text-[13px] text-zinc-500">
+          Send this to {ATTENDANCE_EVENT_LABELS[eventType].toLowerCase()} leaders — they can report attendance without signing in.
+        </p>
+        <code className="mt-2 block truncate rounded-md bg-zinc-100 px-2 py-1 text-[12px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">{url}</code>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        {me?.role === "admin" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<RefreshCw className="size-4" />}
+            loading={rotate.isPending}
+            onClick={async () => {
+              if (
+                await confirm({
+                  title: "Replace this link?",
+                  message: "The current link will stop working right away, and you'll need to send leaders the new one. Do this if the link was shared somewhere it shouldn't be.",
+                  confirmLabel: "Replace link",
+                })
+              ) {
+                rotate.mutate(eventType, { onSuccess: () => toast("New link created"), onError: (e) => toast(errorMessage(e), "error") });
+              }
+            }}
+          >
+            New link
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="primary"
+          icon={<Copy className="size-4" />}
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(url);
+              toast("Link copied");
+            } catch {
+              toast("Couldn't copy — select the link and copy it manually", "error");
+            }
+          }}
+        >
+          Copy link
+        </Button>
+      </div>
+    </Card>
+  );
+}
 
 /** The most recent Sunday (today, if it's Sunday) as YYYY-MM-DD. */
 function lastSunday() {
@@ -160,6 +225,8 @@ export function AttendancePage() {
         <Segmented label="Chart shows" value={trendMode} onChange={setTrendMode} options={TREND_OPTIONS} />
       </div>
 
+      {LINK_REPORT_EVENT_TYPES.includes(eventType as LinkReportEventType) && <LeaderLinkCard eventType={eventType as LinkReportEventType} />}
+
       {reports.length === 0 ? (
         <Card>
           <EmptyState
@@ -219,7 +286,10 @@ export function AttendancePage() {
                   <tr key={r.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
                     <td className="px-4 py-2 whitespace-nowrap">{formatDay(r.date, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</td>
                     <td className="px-4 py-2 text-right font-medium tabular-nums">{r.attendance}</td>
-                    <td className="hidden max-w-xs truncate px-4 py-2 text-zinc-500 sm:table-cell">{r.notes}</td>
+                    <td className="hidden max-w-xs truncate px-4 py-2 text-zinc-500 sm:table-cell">
+                      {r.source === "leader_link" && <Badge className="mr-2">Leader</Badge>}
+                      <span title={r.notes ?? undefined}>{r.notes}</span>
+                    </td>
                     <td className="px-2 py-1 text-right whitespace-nowrap">
                       <IconButton label="Edit" onClick={() => setDialog({ report: r })}><Pencil className="size-4" /></IconButton>
                       <IconButton

@@ -17,6 +17,7 @@ import { familyRoutes } from "./routes/families";
 import { groupRoutes } from "./routes/groups";
 import { memberRoutes } from "./routes/members";
 import { teamRoutes } from "./routes/teams";
+import { publicReportRoutes, reportLinkRoutes } from "./routes/report-links";
 import { userRoutes } from "./routes/users";
 
 export const API_VERSION = "v1";
@@ -26,9 +27,14 @@ const PUBLIC_API_PATHS = new Set(
   ["/auth/login", "/auth/token", "/auth/password/forgot", "/auth/password/reset"].map((p) => `/api/${API_VERSION}${p}`),
 );
 
+/** Everything under /api/v1/public/ is intentionally unauthenticated (and rate limited per route). */
+const PUBLIC_PREFIX = `/api/${API_VERSION}/public/`;
+
 export function buildApi() {
   const api = createRouter();
-  api.use("*", (c, next) => (PUBLIC_API_PATHS.has(c.req.path) ? next() : requireAuth(c, next)));
+  api.use("*", (c, next) =>
+    PUBLIC_API_PATHS.has(c.req.path) || c.req.path.startsWith(PUBLIC_PREFIX) ? next() : requireAuth(c, next),
+  );
   api
     .route("/", authRoutes)
     .route("/", dashboardRoutes)
@@ -37,7 +43,9 @@ export function buildApi() {
     .route("/", groupRoutes)
     .route("/", teamRoutes)
     .route("/", attendanceRoutes)
-    .route("/", userRoutes);
+    .route("/", userRoutes)
+    .route("/", publicReportRoutes)
+    .route("/", reportLinkRoutes);
 
   api.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",

@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import type { PersonRef } from "@shared/schemas";
 import { TrendChart } from "../components/trend-chart";
-import { ButtonLink, Card, CardHeader, EmptyState, ErrorNotice, LoadingPage, PageHeader, PersonLink, StatusBadge } from "../components/ui";
+import { ButtonLink, Card, CardHeader, EmptyState, ErrorNotice, LoadingPage, PageHeader, PersonLink, Segmented, StatusBadge } from "../components/ui";
 import { age, formatDay, relativeDays } from "../lib/format";
 import { useDashboard, useMe } from "../lib/queries";
+import { TREND_OPTIONS, useTrendMode, windowNote } from "../lib/trend-mode";
 
 function greeting() {
   const h = new Date().getHours();
@@ -63,12 +64,17 @@ function PeopleCard({ title, description, people, empty, icon }: { title: string
 export function DashboardPage() {
   const { data, isLoading, error } = useDashboard();
   const { data: me } = useMe();
+  const [trendMode, setTrendMode] = useTrendMode();
 
   if (isLoading) return <LoadingPage />;
   if (error || !data) return <ErrorNotice error={error} />;
 
   const { counts } = data;
-  const trend = data.sundayTrend.map((p) => ({ date: p.date, value: p.attendance }));
+  const trend = data.sundayTrend.map((p) =>
+    trendMode === "rolling"
+      ? { date: p.date, value: p.rollingAverage, note: windowNote(p.windowCount, "Sunday") }
+      : { date: p.date, value: p.attendance },
+  );
 
   return (
     <>
@@ -108,16 +114,19 @@ export function DashboardPage() {
       <Card className="mt-6">
         <CardHeader
           title="Sunday attendance"
-          description="Last six months"
+          description={trendMode === "rolling" ? "Last six months · 4-week rolling average" : "Last six months"}
           action={
-            <Link to="/attendance" className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
-              View all
-            </Link>
+            trend.length > 0 && <Segmented label="Show" value={trendMode} onChange={setTrendMode} options={TREND_OPTIONS} />
           }
         />
         <div className="px-3 py-4 sm:px-5">
           {trend.length ? (
-            <TrendChart points={trend} label="Sunday attendance" />
+            <>
+              <TrendChart points={trend} label={trendMode === "rolling" ? "Sunday attendance, 4-week rolling average" : "Sunday attendance"} />
+              <Link to="/attendance" className="mt-2 inline-block px-2 text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
+                View all attendance →
+              </Link>
+            </>
           ) : (
             <EmptyState
               icon={<ChartColumn className="size-5" />}

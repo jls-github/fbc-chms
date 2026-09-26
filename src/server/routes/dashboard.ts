@@ -3,6 +3,7 @@ import { and, asc, avg, count, countDistinct, desc, eq, gte, isNotNull, ne, notE
 import { Dashboard, SearchResult } from "@shared/schemas";
 import { z } from "zod";
 import type { MemberStatus } from "@shared/constants";
+import { ROLLING_WINDOW_DAYS, withRollingAverage } from "@shared/rolling";
 import {
   attendanceReports,
   families,
@@ -46,6 +47,9 @@ export const dashboardRoutes = createRouter()
       quarterAgo.setUTCMonth(quarterAgo.getUTCMonth() - 3);
       const halfYearAgo = new Date(today);
       halfYearAgo.setUTCMonth(halfYearAgo.getUTCMonth() - 6);
+      // Fetch one extra window so the earliest charted weeks still get full 4-week averages.
+      const trendFrom = new Date(halfYearAgo);
+      trendFrom.setUTCDate(trendFrom.getUTCDate() - ROLLING_WINDOW_DAYS);
 
       const activeAdult = and(eq(members.status, "active"), eq(members.isChild, false));
 
@@ -62,7 +66,7 @@ export const dashboardRoutes = createRouter()
           db
             .select({ date: attendanceReports.date, attendance: attendanceReports.attendance })
             .from(attendanceReports)
-            .where(and(eq(attendanceReports.eventType, "sunday_service"), gte(attendanceReports.date, isoDay(halfYearAgo))))
+            .where(and(eq(attendanceReports.eventType, "sunday_service"), gte(attendanceReports.date, isoDay(trendFrom))))
             .orderBy(asc(attendanceReports.date)),
           db
             .select()
@@ -115,7 +119,9 @@ export const dashboardRoutes = createRouter()
             onTeams: onTeams?.n ?? 0,
           },
           averageSundayAttendance: avgRow?.avg == null ? null : Math.round(Number(avgRow.avg)),
-          sundayTrend: trend,
+          sundayTrend: withRollingAverage(trend.map((r) => ({ date: r.date, value: r.attendance })))
+            .filter((p) => p.date >= isoDay(halfYearAgo))
+            .map(({ value, ...p }) => ({ ...p, attendance: value })),
           adultsWithoutGroup: noGroup.map(personRef),
           adultsWithoutTeam: noTeam.map(personRef),
           recentGuests: guests.map((m) => ({ ...personRef(m), createdAt: m.createdAt.toISOString() })),

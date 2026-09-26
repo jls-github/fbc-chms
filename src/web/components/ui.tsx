@@ -636,7 +636,7 @@ export function Segmented<T extends string>({
           className={clsx(
             "inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors",
             o.value === value
-              ? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-white"
+              ? "bg-white text-zinc-900 shadow-xs ring-1 ring-zinc-300/80 dark:bg-zinc-700 dark:text-white dark:ring-zinc-600"
               : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
           )}
         >

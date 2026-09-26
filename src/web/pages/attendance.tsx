@@ -24,8 +24,10 @@ import {
 } from "../components/ui";
 import { errorMessage } from "../lib/api";
 import { useForm } from "../lib/form";
-import { formatDay, todayIso } from "../lib/format";
+import { formatDay, formatShortDay, todayIso } from "../lib/format";
 import { useAttendance, useDeleteAttendance, useSaveAttendance } from "../lib/queries";
+import { TREND_OPTIONS, useTrendMode, windowNote } from "../lib/trend-mode";
+import { withRollingAverage } from "@shared/rolling";
 
 /** The most recent Sunday (today, if it's Sunday) as YYYY-MM-DD. */
 function lastSunday() {
@@ -111,6 +113,7 @@ export function AttendancePage() {
   const confirm = useConfirm();
   const toast = useToast();
   const [dialog, setDialog] = useState<{ report?: AttendanceReport } | null>(null);
+  const [trendMode, setTrendMode] = useTrendMode();
 
   useEffect(() => {
     if (params.get("new")) {
@@ -132,8 +135,11 @@ export function AttendancePage() {
   if (error) return <ErrorNotice error={error} />;
 
   const chronological = [...reports].reverse();
-  const recent = reports.slice(0, 4);
-  const avg4 = recent.length ? Math.round(recent.reduce((s, r) => s + r.attendance, 0) / recent.length) : null;
+  const rolling = withRollingAverage(chronological.map((r) => ({ date: r.date, value: r.attendance })));
+  const latestRolling = rolling.at(-1);
+  const chartPoints = rolling.map((p) =>
+    trendMode === "rolling" ? { date: p.date, value: p.rollingAverage, note: windowNote(p.windowCount) } : { date: p.date, value: p.value },
+  );
   const high = reports.reduce<AttendanceReport | null>((best, r) => (!best || r.attendance > best.attendance ? r : best), null);
 
   return (
@@ -144,13 +150,14 @@ export function AttendancePage() {
         actions={<Button variant="primary" icon={<Plus className="size-4" />} onClick={() => setDialog({})}>Record attendance</Button>}
       />
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <Segmented
           label="Gathering"
           value={eventType}
           onChange={(t) => setParams(t === "sunday_service" ? {} : { type: t }, { replace: true })}
           options={ATTENDANCE_EVENT_TYPES.map((t) => ({ value: t, label: ATTENDANCE_EVENT_LABELS[t], count: counts[t] }))}
         />
+        <Segmented label="Chart shows" value={trendMode} onChange={setTrendMode} options={TREND_OPTIONS} />
       </div>
 
       {reports.length === 0 ? (
@@ -166,7 +173,11 @@ export function AttendancePage() {
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: "Most recent", value: reports[0]!.attendance, hint: formatDay(reports[0]!.date) },
-              { label: "Last 4 average", value: avg4 ?? "—", hint: `${recent.length} reports` },
+              {
+                label: "4-week average",
+                value: latestRolling?.rollingAverage ?? "—",
+                hint: latestRolling ? `${latestRolling.windowCount} ${latestRolling.windowCount === 1 ? "report" : "reports"} in the 4 weeks to ${formatShortDay(latestRolling.date)}` : "",
+              },
               { label: "Highest", value: high?.attendance ?? "—", hint: high ? formatDay(high.date) : "" },
             ].map((s) => (
               <Card key={s.label} className="p-4">
@@ -179,9 +190,15 @@ export function AttendancePage() {
 
           {chronological.length > 1 && (
             <Card className="mt-6">
-              <CardHeader title={`${ATTENDANCE_EVENT_LABELS[eventType]} over time`} description={`${chronological.length} reports`} />
+              <CardHeader
+                title={`${ATTENDANCE_EVENT_LABELS[eventType]} over time`}
+                description={trendMode === "rolling" ? `4-week rolling average · ${chronological.length} reports` : `${chronological.length} reports`}
+              />
               <div className="px-3 py-4 sm:px-5">
-                <TrendChart points={chronological.map((r) => ({ date: r.date, value: r.attendance }))} label={`${ATTENDANCE_EVENT_LABELS[eventType]} attendance`} />
+                <TrendChart
+                  points={chartPoints}
+                  label={`${ATTENDANCE_EVENT_LABELS[eventType]} attendance${trendMode === "rolling" ? ", 4-week rolling average" : ""}`}
+                />
               </div>
             </Card>
           )}

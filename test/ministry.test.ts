@@ -116,6 +116,25 @@ describe("dashboard", () => {
     expect(d.averageSundayAttendance).toBe(91);
   });
 
+  it("includes a 4-week rolling average that looks back past the charted range", async () => {
+    const day = (weeksAgo: number) => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - weeksAgo * 7);
+      return d.toISOString().slice(0, 10);
+    };
+    // Six-plus months back so the oldest charted Sunday has full history behind it.
+    for (let w = 29; w >= 0; w--) {
+      await api.post("/attendance", { eventType: "sunday_service", date: day(w), attendance: 100 + (w % 2) * 20 });
+    }
+    await api.post("/attendance", { eventType: "community_group", date: day(0), attendance: 5 });
+    const { sundayTrend } = (await api.get("/dashboard")).json;
+    expect(sundayTrend.length).toBeGreaterThanOrEqual(25);
+    expect(sundayTrend.length).toBeLessThan(30);
+    // Alternating 100/120 → every full 4-week window averages 110, including the first charted week.
+    expect(sundayTrend.every((p: { rollingAverage: number; windowCount: number }) => p.rollingAverage === 110 && p.windowCount === 4)).toBe(true);
+    expect(sundayTrend.at(-1).attendance).toBe(100);
+  });
+
   it("computes the next birthday, rolling into next year and handling leap days", () => {
     const today = new Date(Date.UTC(2026, 8, 25));
     expect(nextBirthday("1990-10-01", today).toISOString().slice(0, 10)).toBe("2026-10-01");

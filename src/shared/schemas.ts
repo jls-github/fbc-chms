@@ -302,7 +302,16 @@ export const Dashboard = z
       onTeams: z.number(),
     }),
     averageSundayAttendance: z.number().nullable(),
-    sundayTrend: z.array(z.object({ date: z.string(), attendance: z.number() })),
+    /** Last six months of Sunday services, each with its trailing 4-week (28-day) average. */
+    sundayTrend: z.array(
+      z.object({
+        date: z.string(),
+        attendance: z.number(),
+        rollingAverage: z.number(),
+        /** Reports in the 28-day window (fewer than 4 means missed or unrecorded weeks). */
+        windowCount: z.number(),
+      }),
+    ),
     adultsWithoutGroup: z.array(PersonRef),
     adultsWithoutTeam: z.array(PersonRef),
     recentGuests: z.array(PersonRef.extend({ createdAt: z.string() })),

@@ -20,7 +20,7 @@ proxy:
 # Kamal's local registry: images are pushed to the droplet over an SSH tunnel,
 # so no Docker Hub account or token is needed.
 registry:
-  server: localhost:5555
+  server: localhost:5566
 
 ssh:
   user: root

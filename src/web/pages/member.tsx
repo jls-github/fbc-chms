@@ -31,7 +31,7 @@ import { age, formatDay, fullName } from "../lib/format";
 import { useAppAccountActions, useDeleteMember, useFamilies, useGroups, useMember, useSaveFamily, useSaveMember, useTeams } from "../lib/queries";
 import { formatPhone } from "@shared/phone";
 import type { InviteResponse } from "@shared/schemas";
-import { InvitationDialog } from "./app-accounts";
+import { InvitationDialog } from "../components/invitation-dialog";
 
 function useIdParam() {
   return Number(useParams().id);

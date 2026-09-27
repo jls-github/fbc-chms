@@ -122,9 +122,11 @@ describe("usage statistics", () => {
     ]);
   });
 
-  it("is visible to staff and admins only", async () => {
+  it("is visible to admins only", async () => {
     const a = await member("Ana");
     expect((await a.get("/usage")).status).toBe(403);
+    const office = await ctx.signIn("secretary@test.org", "staff");
+    expect((await office.get("/usage")).status).toBe(403);
     await staff.post("/users", { email: "helper@test.org", password: "password123", role: "volunteer" });
     const login = await ctx.client().post("/auth/login", { identifier: "helper@test.org", password: "password123" });
     expect((await ctx.client(login.headers.get("set-cookie")!.split(";")[0]).get("/usage")).status).toBe(403);

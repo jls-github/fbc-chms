@@ -16,7 +16,7 @@ not legal advice).
 | Sign-in sessions: device type, when last used (tokens stored only as hashes) | Security | — |
 | Group and team chat messages | The chats | Members of that group, or that team and its leader |
 | Attendance headcounts | Ministry planning | Staff |
-| Anonymous usage statistics (below) | Understanding how the app is used | Staff and admins |
+| Anonymous usage statistics (below) | Understanding how the app is used | Admins |
 
 Everything is stored on the church's own server (DigitalOcean) and database.
 There are **no advertising, analytics or tracking services**, and nothing is sold
@@ -37,7 +37,7 @@ own privacy policy.
 
 ## Usage statistics
 
-Implemented in `src/server/lib/usage.ts`, shown on the staff **Usage** page.
+Implemented in `src/server/lib/usage.ts`, shown to admins on the staff **Usage** page.
 
 - **Aggregates only.** Daily counters such as "directory viewed 12 times" and
   "sermon *X* opened 4 times" — no user, device, IP address, search terms or

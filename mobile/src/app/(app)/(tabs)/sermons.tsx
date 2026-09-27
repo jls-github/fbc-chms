@@ -48,7 +48,7 @@ export default function SermonsScreen() {
       }
       renderItem={({ item }) => (
         <Pressable onPress={() => open(item)} style={({ pressed }) => [styles.row, { backgroundColor: t.card, borderColor: t.border, opacity: pressed ? 0.7 : 1 }]} accessibilityRole="button" accessibilityLabel={`Play ${item.title}`}>
-          <Image source={item.imageUrl ? { uri: item.imageUrl } : undefined} style={styles.thumb} contentFit="cover" transition={200} />
+          <Image source={item.thumbnailUrl ? { uri: item.thumbnailUrl } : undefined} style={styles.thumb} contentFit="cover" transition={200} />
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ color: t.text, fontSize: 16, fontWeight: "600" }} numberOfLines={2}>{item.title}</Text>
             <Text style={{ color: t.muted, fontSize: 13 }} numberOfLines={1}>{[item.date && longDate(item.date), item.speaker].filter(Boolean).join(" · ")}</Text>

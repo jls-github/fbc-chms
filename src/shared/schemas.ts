@@ -691,7 +691,10 @@ export const Sermon = z
     date: z.string().nullable(),
     speaker: z.string().nullable(),
     series: z.string().nullable(),
+    /** Artwork sized for full-width display (16:9). */
     imageUrl: z.string().nullable(),
+    /** The same artwork sized for list thumbnails. */
+    thumbnailUrl: z.string().nullable(),
     /** The sermon's page on fbcenumclaw.com. */
     url: z.string(),
     /** Subsplash player that can be embedded or opened directly. */

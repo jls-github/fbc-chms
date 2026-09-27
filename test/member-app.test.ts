@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { chatMessages, users } from "../src/server/db/schema";
-import { parseSeriesList, parseSeriesSermons, parseSiteDate } from "../src/server/lib/sermons";
+import { parseSeriesList, parseSeriesSermons, parseSiteDate, sizedImage } from "../src/server/lib/sermons";
 import { withinOneEdit } from "../src/server/routes/app-accounts";
 import { createTestContext } from "./helpers";
 
@@ -452,14 +452,20 @@ describe("sermons", () => {
       speaker: "John Souza",
       url: expect.stringMatching(/^https:\/\/fbcenumclaw\.com\/media\/[a-z0-9]+\//),
       playerUrl: expect.stringMatching(/^https:\/\/subsplash\.com\/u\/-T9N865\/media\/embed\/d\/[a-z0-9]+$/),
-      imageUrl: expect.stringContaining("images.subsplash.com"),
+      imageUrl: expect.stringMatching(/^https:\/\/images\.subsplash\.com\/image\.jpg\?id=[0-9a-f-]{36}&w=1280&h=720$/),
+      thumbnailUrl: expect.stringMatching(/&w=400&h=225$/),
     });
     expect(sermons.every((s) => /^\d{4}-\d{2}-\d{2}$/.test(s.date ?? ""))).toBe(true);
     expect(parseSiteDate("Sept 6, 2026")).toBe("2026-09-06");
+    // Full-size originals are swapped for resized copies.
+    expect(sizedImage("https://cdn.subsplash.com/images/T9N865/_source/81de3395-3eb2-4743-b0d1-5b4315c08e8a/image.png", 400)).toBe(
+      "https://images.subsplash.com/image.jpg?id=81de3395-3eb2-4743-b0d1-5b4315c08e8a&w=400&h=225",
+    );
+    expect(sizedImage("https://example.org/art.png", 400)).toBe("https://example.org/art.png");
   });
 
   it("serves recent sermons to members", async () => {
-    ctx.sermons.push({ id: "abc", title: "Jesus Walks Among the Outcasts", date: "2026-09-20", speaker: "John Souza", series: "Stories of the King", imageUrl: null, url: "https://fbcenumclaw.com/media/abc/x", playerUrl: "https://subsplash.com/u/-T9N865/media/embed/d/abc" });
+    ctx.sermons.push({ id: "abc", title: "Jesus Walks Among the Outcasts", date: "2026-09-20", speaker: "John Souza", series: "Stories of the King", imageUrl: null, thumbnailUrl: null, url: "https://fbcenumclaw.com/media/abc/x", playerUrl: "https://subsplash.com/u/-T9N865/media/embed/d/abc" });
     const { app } = await activeMember();
     const res = await app.get("/app/sermons");
     expect(res.json).toMatchObject({ stale: false, sermons: [{ id: "abc", speaker: "John Souza" }] });

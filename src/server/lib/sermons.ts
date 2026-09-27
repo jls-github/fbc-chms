@@ -80,6 +80,18 @@ export function parseSeriesList(html: string) {
     .map((i) => ({ href: i.href, title: i.title }));
 }
 
+const SUBSPLASH_IMAGE_ID = /(?:[?&]id=|\/_source\/)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+
+/**
+ * A Subsplash image resized to fit. The website links some artwork as the
+ * full-size original (often a 2–3 MB PNG), which is slow on phones.
+ */
+export function sizedImage(url: string | null, width: number): string | null {
+  const id = url?.match(SUBSPLASH_IMAGE_ID)?.[1];
+  if (!id) return url;
+  return `https://images.subsplash.com/image.jpg?id=${id}&w=${width}&h=${Math.round((width * 9) / 16)}`;
+}
+
 /** Sermons on a series page. */
 export function parseSeriesSermons(html: string, series: string | null): Sermon[] {
   const site = SERMON_SITE();
@@ -94,7 +106,8 @@ export function parseSeriesSermons(html: string, series: string | null): Sermon[
         date: parseSiteDate(datePart),
         speaker: speaker || null,
         series,
-        imageUrl: i.image,
+        imageUrl: sizedImage(i.image, 1280),
+        thumbnailUrl: sizedImage(i.image, 400),
         url: `${site}${i.href}`,
         playerUrl: `https://subsplash.com/u/-${SUBSPLASH_ACCOUNT()}/media/embed/d/${code}`,
       } satisfies Sermon;

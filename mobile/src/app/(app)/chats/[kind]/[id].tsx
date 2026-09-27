@@ -128,55 +128,58 @@ export default function Chat() {
     <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: t.bg }}>
       {header}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}>
-        <FlatList
-          inverted
-          data={newestFirst}
-          keyExtractor={(m) => String(m.id)}
-          onEndReached={() => void loadOlder()}
-          onEndReachedThreshold={0.3}
-          contentContainerStyle={{ padding: 12, gap: 2, flexGrow: 1 }}
-          ListFooterComponent={loadingOlder ? <ActivityIndicator color={t.brand} style={{ margin: 12 }} /> : null}
-          ListEmptyComponent={
-            <View style={{ transform: [{ scaleY: -1 }], flex: 1, justifyContent: "center" }}>
-              <EmptyState icon="chatbubble-ellipses-outline" title="No messages yet" body={`Start the conversation with ${title}.`} />
-            </View>
-          }
-          renderItem={({ item, index }) => {
-            const older = newestFirst[index + 1];
-            const showName = !item.mine && (older?.author.memberId !== item.author.memberId || older?.mine);
-            return (
-              <View style={{ alignItems: item.mine ? "flex-end" : "flex-start", marginTop: showName ? 10 : 2 }}>
-                {showName && <Text style={{ color: t.muted, fontSize: 12, marginBottom: 2, marginLeft: 10 }}>{item.author.name}</Text>}
-                <Pressable
-                  onLongPress={item.mine && !item.deleted ? () => void remove(item) : undefined}
-                  delayLongPress={350}
-                  accessibilityHint={item.mine && !item.deleted ? "Long-press to delete" : undefined}
-                  style={[
-                    styles.bubble,
-                    item.mine
-                      ? { backgroundColor: t.mine, borderBottomRightRadius: 6 }
-                      : { backgroundColor: t.theirs, borderBottomLeftRadius: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: t.border },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      color: item.deleted ? (item.mine ? "rgba(255,255,255,0.7)" : t.faint) : item.mine ? t.mineText : t.text,
-                      fontSize: 16,
-                      lineHeight: 21,
-                      fontStyle: item.deleted ? "italic" : "normal",
-                    }}
-                    selectable={!item.deleted}
+        {messages.length === 0 ? (
+          // Shown outside the inverted list: inverted lists flip their contents differently on
+          // each platform (Android mirrors both axes), which left this text backward on Android.
+          <View style={{ flex: 1, justifyContent: "center" }}>
+            <EmptyState icon="chatbubble-ellipses-outline" title="No messages yet" body={`Start the conversation with ${title}.`} />
+          </View>
+        ) : (
+          <FlatList
+            inverted
+            data={newestFirst}
+            keyExtractor={(m) => String(m.id)}
+            onEndReached={() => void loadOlder()}
+            onEndReachedThreshold={0.3}
+            contentContainerStyle={{ padding: 12, gap: 2, flexGrow: 1 }}
+            ListFooterComponent={loadingOlder ? <ActivityIndicator color={t.brand} style={{ margin: 12 }} /> : null}
+            renderItem={({ item, index }) => {
+              const older = newestFirst[index + 1];
+              const showName = !item.mine && (older?.author.memberId !== item.author.memberId || older?.mine);
+              return (
+                <View style={{ alignItems: item.mine ? "flex-end" : "flex-start", marginTop: showName ? 10 : 2 }}>
+                  {showName && <Text style={{ color: t.muted, fontSize: 12, marginBottom: 2, marginLeft: 10 }}>{item.author.name}</Text>}
+                  <Pressable
+                    onLongPress={item.mine && !item.deleted ? () => void remove(item) : undefined}
+                    delayLongPress={350}
+                    accessibilityHint={item.mine && !item.deleted ? "Long-press to delete" : undefined}
+                    style={[
+                      styles.bubble,
+                      item.mine
+                        ? { backgroundColor: t.mine, borderBottomRightRadius: 6 }
+                        : { backgroundColor: t.theirs, borderBottomLeftRadius: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: t.border },
+                    ]}
                   >
-                    {item.deleted ? "Message deleted" : item.body}
-                  </Text>
-                  <Text style={{ color: item.mine ? "rgba(255,255,255,0.75)" : t.faint, fontSize: 11, marginTop: 2, alignSelf: "flex-end" }}>
-                    {chatTime(item.createdAt)}
-                  </Text>
-                </Pressable>
-              </View>
-            );
-          }}
-        />
+                    <Text
+                      style={{
+                        color: item.deleted ? (item.mine ? "rgba(255,255,255,0.7)" : t.faint) : item.mine ? t.mineText : t.text,
+                        fontSize: 16,
+                        lineHeight: 21,
+                        fontStyle: item.deleted ? "italic" : "normal",
+                      }}
+                      selectable={!item.deleted}
+                    >
+                      {item.deleted ? "Message deleted" : item.body}
+                    </Text>
+                    <Text style={{ color: item.mine ? "rgba(255,255,255,0.75)" : t.faint, fontSize: 11, marginTop: 2, alignSelf: "flex-end" }}>
+                      {chatTime(item.createdAt)}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            }}
+          />
+        )}
         {sendError && <Text style={{ color: t.danger, paddingHorizontal: 16, paddingBottom: 4 }}>{sendError}</Text>}
         <View style={[styles.composer, { backgroundColor: t.card, borderTopColor: t.border }]}>
           <TextInput

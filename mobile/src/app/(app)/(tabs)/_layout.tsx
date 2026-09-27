@@ -1,12 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { useGroups } from "../../../lib/queries";
+import { unreadCount, useChats } from "../../../lib/queries";
 import { fonts, useTheme } from "../../../lib/theme";
 
 export default function TabsLayout() {
   const t = useTheme();
-  const groups = useGroups();
-  const unread = groups.data?.groups.reduce((n, g) => n + g.unread, 0) ?? 0;
+  const chats = useChats();
+  const unread = unreadCount(chats.data);
   return (
     <Tabs
       screenOptions={{
@@ -24,9 +24,9 @@ export default function TabsLayout() {
       <Tabs.Screen name="directory" options={{ title: "Directory", tabBarIcon: ({ color, size }) => <Ionicons name="people" color={color} size={size} /> }} />
       <Tabs.Screen name="sermons" options={{ title: "Sermons", tabBarIcon: ({ color, size }) => <Ionicons name="play-circle" color={color} size={size} /> }} />
       <Tabs.Screen
-        name="groups"
+        name="chats"
         options={{
-          title: "Groups",
+          title: "Chats",
           tabBarBadge: unread > 0 ? unread : undefined,
           tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles" color={color} size={size} />,
         }}

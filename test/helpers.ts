@@ -39,7 +39,7 @@ export async function createTestContext() {
     mail.length = 0;
     await db.execute(
       sql.raw(
-        "truncate usage_counters, usage_actives, usage_active_totals, group_reads, group_messages, app_settings, family_photos, checkins, report_links, attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
+        "truncate usage_counters, usage_actives, usage_active_totals, chat_reads, chat_messages, app_settings, family_photos, checkins, report_links, attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
       ),
     );
   }

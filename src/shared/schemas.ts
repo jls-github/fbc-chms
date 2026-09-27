@@ -700,17 +700,23 @@ export const Sermon = z
   .meta({ id: "Sermon" });
 export type Sermon = z.infer<typeof Sermon>;
 
-export const ChatGroup = z
+/** A group's or team's chat, as listed in the member app. */
+export const ChatRoom = z
   .object({
     id: z.number(),
+    kind: z.enum(["group", "team"]),
     name: z.string(),
-    meetingTime: z.string().nullable(),
+    /** Meeting time for a group; the person's role for a team. */
+    detail: z.string().nullable(),
     memberCount: z.number(),
     unread: z.number(),
     lastMessage: z.object({ body: z.string(), authorName: z.string(), createdAt: z.string() }).nullable(),
   })
-  .meta({ id: "ChatGroup" });
-export type ChatGroup = z.infer<typeof ChatGroup>;
+  .meta({ id: "ChatRoom" });
+export type ChatRoom = z.infer<typeof ChatRoom>;
+
+export const ChatList = z.object({ groups: z.array(ChatRoom), teams: z.array(ChatRoom) }).meta({ id: "ChatList" });
+export type ChatList = z.infer<typeof ChatList>;
 
 export const ChatMessage = z
   .object({
@@ -759,7 +765,7 @@ export const UsageReport = z
     last30Days: z.object({
       directoryViews: z.number(),
       sermonOpens: z.number(),
-      groupChatsOpened: z.number(),
+      chatsOpened: z.number(),
       messagesSent: z.number(),
       kidsCheckedIn: z.number(),
       leaderReports: z.number(),

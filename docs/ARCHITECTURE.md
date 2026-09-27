@@ -92,8 +92,11 @@ birthday appear in the directory (or opts out entirely); the app and the
 printed directory both honor it. Household photos in the app use signed,
 expiring URLs because image tags can't send bearer tokens.
 
-**Group chat** is per community group, limited to its members, with polling
-(4 s while a chat is open), unread counts, and author-only deletion.
+**Chats** (`routes/chats.ts`): every community group and every ministry team
+has one. A group chat is limited to the group's members; a team chat to the
+team's members plus its leader. Both share the `chat_messages` / `chat_reads`
+tables (exactly one of `group_id` / `team_id` set), with polling (4 s while a
+chat is open), unread counts, and author-only deletion.
 
 **Next:** push notifications for new messages (device-token registration plus
 APNs/FCM via Expo push), and email/SMS verification so self-sign-ups that match

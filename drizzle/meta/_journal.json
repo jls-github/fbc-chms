@@ -43,6 +43,20 @@
       "when": 1790461413957,
       "tag": "0005_usage_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790472806763,
+      "tag": "0006_chats",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790472814151,
+      "tag": "0007_drop_group_chat_tables",
+      "breakpoints": true
     }
   ]
 }

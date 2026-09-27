@@ -2,7 +2,7 @@ import { createRoute } from "@hono/zod-openapi";
 import { and, count, eq, gte } from "drizzle-orm";
 import { UsageReport } from "@shared/schemas";
 import { requireRole } from "../auth/middleware";
-import { attendanceReports, checkins, groupMessages, users } from "../db/schema";
+import { attendanceReports, chatMessages, checkins, users } from "../db/schema";
 import { serviceDate } from "../lib/church-time";
 import { authErrors, jsonContent, security } from "../lib/openapi";
 import { createRouter } from "../lib/router";
@@ -40,7 +40,7 @@ export const usageRoutes = createRouter().openapi(
       activeCounts(db, "month", [starts.month]),
       activeCounts(db, "week", weeks),
       counterTotals(db, since),
-      db.select({ n: count() }).from(groupMessages).where(gte(groupMessages.createdAt, sinceTime)),
+      db.select({ n: count() }).from(chatMessages).where(gte(chatMessages.createdAt, sinceTime)),
       db.select({ n: count() }).from(checkins).where(gte(checkins.serviceDate, since)),
       db
         .select({ n: count() })
@@ -84,7 +84,7 @@ export const usageRoutes = createRouter().openapi(
         last30Days: {
           directoryViews: metric("directory_view"),
           sermonOpens: metric("sermon_open"),
-          groupChatsOpened: metric("group_open"),
+          chatsOpened: metric("group_open") + metric("team_open"),
           messagesSent: messages?.n ?? 0,
           kidsCheckedIn: kids?.n ?? 0,
           leaderReports: leaders?.n ?? 0,

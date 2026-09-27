@@ -1,7 +1,7 @@
 /**
  * The member app's API: public sign-up / invite claiming, and — for signed-in
- * members linked to a person — their profile, the directory, sermons and
- * group chat. The app authenticates with bearer tokens on every platform.
+ * members linked to a person — their profile, the directory and sermons
+ * (chats are in ./chats.ts). The app authenticates with bearer tokens on every platform.
  */
 import { createRoute } from "@hono/zod-openapi";
 import { and, asc, count, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
@@ -11,16 +11,12 @@ import { normalizePhone } from "@shared/phone";
 import {
   AppEventInput,
   AppSignupInput,
-  ChatGroup,
-  ChatMessage,
-  ChatMessagesQuery,
   ClaimInviteInput,
   DirectoryEntry,
   ErrorResponse,
   IdParam,
   MyProfile,
   MyProfilePatch,
-  PostMessageInput,
   Sermon,
   TokenResponse,
   User,
@@ -28,7 +24,7 @@ import {
 import { hashPassword, hashToken } from "../auth/crypto";
 import { createSession } from "../auth/sessions";
 import type { Db } from "../db/client";
-import { families, familyPhotos, groupMemberships, groupMessages, groupReads, groups, members, users } from "../db/schema";
+import { families, familyPhotos, members, users } from "../db/schema";
 import { clientIp } from "../lib/client-ip";
 import { buildDirectory } from "../lib/directory";
 import { ApiError, notFound } from "../lib/errors";
@@ -60,7 +56,7 @@ const conflict = { 409: jsonContent(ErrorResponse, "Already exists") } as const;
 const DIRECTORY_STATUSES = ["active", "prospective"] as const;
 
 const publicTags = ["Member app: accounts"];
-const appTags = ["Member app"];
+export const appTags = ["Member app"];
 
 // --------------------------------------------------------------- public
 
@@ -185,7 +181,7 @@ export const publicMemberAppRoutes = createRouter()
 // ---------------------------------------------------------- signed in
 
 /** The person this account belongs to; the rest of the app requires one. */
-async function requireMember(c: Context<AppEnv>) {
+export async function requireMember(c: Context<AppEnv>) {
   const { user } = c.var;
   if (user.status === "pending") throw new ApiError(403, "Your account is waiting for the church office to confirm who you are.");
   if (!user.memberId) throw new ApiError(403, "Your account isn't linked to anyone in the church directory yet. Please contact the church office.");
@@ -226,32 +222,10 @@ async function myProfile(db: Db, memberId: number | null): Promise<MyProfile> {
   };
 }
 
-/** Groups this person belongs to; chat is limited to them. */
-async function requireGroupMember(c: Context<AppEnv>, groupId: number) {
-  const member = await requireMember(c);
-  const [membership] = await c.var.deps.db
-    .select()
-    .from(groupMemberships)
-    .where(and(eq(groupMemberships.groupId, groupId), eq(groupMemberships.memberId, member.id)));
-  if (!membership) throw notFound("Group");
-  return member;
-}
-
-type MessageRow = { message: typeof groupMessages.$inferSelect; author: typeof members.$inferSelect | null };
-
-const serializeMessage = ({ message, author }: MessageRow, me: number): ChatMessage => ({
-  id: message.id,
-  body: message.deletedAt ? "" : message.body,
-  createdAt: message.createdAt.toISOString(),
-  author: { memberId: author?.id ?? null, name: author ? `${author.firstName} ${author.lastName}` : "Former member" },
-  mine: author?.id === me,
-  deleted: !!message.deletedAt,
-});
-
 const MeResponse = z.object({ user: User, profile: MyProfile });
 
 /** Count an anonymous event unless this person opted out or their browser asks not to be tracked. */
-function countIf(c: Context<AppEnv>, metric: string, dimension = "") {
+export function countIf(c: Context<AppEnv>, metric: string, dimension = "") {
   if (!mayTrack(c.var.user.usageOptOut, { get: (n) => c.req.header(n) })) return;
   inBackground(countEvent(c.var.deps.db, metric, dimension), `count ${metric}`);
 }
@@ -360,184 +334,6 @@ export const memberAppRoutes = createRouter()
       const { event, sermonId } = c.req.valid("json");
       if (memberAppLimits.events.hit(String(c.var.user.id))) throw new ApiError(429, "Too many events.");
       countIf(c, event, sermonId ?? "");
-      return c.body(null, 204);
-    },
-  )
-  .openapi(
-    createRoute({
-      method: "get",
-      path: "/app/groups",
-      tags: appTags,
-      summary: "My groups, with the latest message and unread count",
-      security,
-      responses: { 200: jsonContent(z.object({ groups: z.array(ChatGroup) })), ...authErrors },
-    }),
-    async (c) => {
-      const me = await requireMember(c);
-      const { db } = c.var.deps;
-      const mine = await db
-        .select({ group: groups })
-        .from(groupMemberships)
-        .innerJoin(groups, eq(groups.id, groupMemberships.groupId))
-        .where(eq(groupMemberships.memberId, me.id))
-        .orderBy(asc(groups.name));
-      const ids = mine.map((g) => g.group.id);
-      if (ids.length === 0) return c.json({ groups: [] }, 200);
-
-      const [sizes, latest] = await Promise.all([
-        db.select({ groupId: groupMemberships.groupId, n: count() }).from(groupMemberships).where(inArray(groupMemberships.groupId, ids)).groupBy(groupMemberships.groupId),
-        db
-          .selectDistinctOn([groupMessages.groupId], { message: groupMessages, author: members })
-          .from(groupMessages)
-          .leftJoin(members, eq(members.id, groupMessages.memberId))
-          .where(and(inArray(groupMessages.groupId, ids), isNull(groupMessages.deletedAt)))
-          .orderBy(groupMessages.groupId, desc(groupMessages.id)),
-      ]);
-      // Unread = messages from other people after my read marker.
-      const unread = await db
-        .select({ groupId: groupMessages.groupId, n: count() })
-        .from(groupMessages)
-        .leftJoin(groupReads, and(eq(groupReads.groupId, groupMessages.groupId), eq(groupReads.memberId, me.id)))
-        .where(
-          and(
-            inArray(groupMessages.groupId, ids),
-            gt(groupMessages.id, sql`coalesce(${groupReads.lastReadMessageId}, 0)`),
-            isNull(groupMessages.deletedAt),
-            sql`${groupMessages.memberId} is distinct from ${me.id}`,
-          ),
-        )
-        .groupBy(groupMessages.groupId);
-      const unreadBy = new Map(unread.map((u) => [u.groupId, u.n]));
-      return c.json(
-        {
-          groups: mine.map(({ group }) => {
-            const last = latest.find((l) => l.message.groupId === group.id);
-            return {
-              id: group.id,
-              name: group.name,
-              meetingTime: group.meetingTime,
-              memberCount: sizes.find((s) => s.groupId === group.id)?.n ?? 0,
-              unread: unreadBy.get(group.id) ?? 0,
-              lastMessage: last
-                ? {
-                    body: last.message.body,
-                    authorName: last.author ? last.author.firstName : "Former member",
-                    createdAt: last.message.createdAt.toISOString(),
-                  }
-                : null,
-            };
-          }),
-        },
-        200,
-      );
-    },
-  )
-  .openapi(
-    createRoute({
-      method: "get",
-      path: "/app/groups/{id}/messages",
-      tags: appTags,
-      summary: "A group's chat messages (oldest first)",
-      description: "Pass `after` with the newest id you have to poll for new messages, or `before` to load older history.",
-      security,
-      request: { params: IdParam, query: ChatMessagesQuery },
-      responses: { 200: jsonContent(z.object({ messages: z.array(ChatMessage), hasMore: z.boolean() })), ...authErrors, ...notFoundError },
-    }),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      const { after, before, limit } = c.req.valid("query");
-      const me = await requireGroupMember(c, id);
-      const { db } = c.var.deps;
-      const base = db
-        .select({ message: groupMessages, author: members })
-        .from(groupMessages)
-        .leftJoin(members, eq(members.id, groupMessages.memberId));
-      let rows: MessageRow[];
-      let hasMore = false;
-      // Opening a chat (not polling, not paging back) counts as one "group chat opened".
-      if (after === undefined && before === undefined) countIf(c, "group_open");
-      if (after !== undefined) {
-        rows = await base.where(and(eq(groupMessages.groupId, id), gt(groupMessages.id, after))).orderBy(asc(groupMessages.id)).limit(limit);
-      } else {
-        const newestFirst = await base
-          .where(and(eq(groupMessages.groupId, id), before ? lt(groupMessages.id, before) : sql`true`))
-          .orderBy(desc(groupMessages.id))
-          .limit(limit + 1);
-        hasMore = newestFirst.length > limit;
-        rows = newestFirst.slice(0, limit).reverse();
-      }
-      return c.json({ messages: rows.map((r) => serializeMessage(r, me.id)), hasMore }, 200);
-    },
-  )
-  .openapi(
-    createRoute({
-      method: "post",
-      path: "/app/groups/{id}/messages",
-      tags: appTags,
-      summary: "Send a message to a group",
-      security,
-      request: { params: IdParam, ...jsonBody(PostMessageInput) },
-      responses: { 201: jsonContent(z.object({ message: ChatMessage }), "Sent"), ...authErrors, ...notFoundError, ...tooMany, ...validationError },
-    }),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      const { body } = c.req.valid("json");
-      const me = await requireGroupMember(c, id);
-      if (memberAppLimits.post.hit(String(me.id))) throw new ApiError(429, "You're sending messages very quickly. Please slow down a little.");
-      const { db } = c.var.deps;
-      const [message] = await db.insert(groupMessages).values({ groupId: id, memberId: me.id, body }).returning();
-      // Your own message counts as read.
-      await db
-        .insert(groupReads)
-        .values({ groupId: id, memberId: me.id, lastReadMessageId: message!.id })
-        .onConflictDoUpdate({ target: [groupReads.groupId, groupReads.memberId], set: { lastReadMessageId: message!.id } });
-      return c.json({ message: serializeMessage({ message: message!, author: me }, me.id) }, 201);
-    },
-  )
-  .openapi(
-    createRoute({
-      method: "delete",
-      path: "/app/groups/{id}/messages/{messageId}",
-      tags: appTags,
-      summary: "Delete one of my messages",
-      security,
-      request: { params: z.object({ id: z.coerce.number().int().positive(), messageId: z.coerce.number().int().positive() }) },
-      responses: { ...noContent, ...authErrors, ...notFoundError },
-    }),
-    async (c) => {
-      const { id, messageId } = c.req.valid("param");
-      const me = await requireGroupMember(c, id);
-      const deleted = await c.var.deps.db
-        .update(groupMessages)
-        .set({ deletedAt: new Date() })
-        .where(and(eq(groupMessages.id, messageId), eq(groupMessages.groupId, id), eq(groupMessages.memberId, me.id), isNull(groupMessages.deletedAt)))
-        .returning({ id: groupMessages.id });
-      if (!deleted.length) throw notFound("Message");
-      return c.body(null, 204);
-    },
-  )
-  .openapi(
-    createRoute({
-      method: "post",
-      path: "/app/groups/{id}/read",
-      tags: appTags,
-      summary: "Mark a group's chat as read up to a message",
-      security,
-      request: { params: IdParam, ...jsonBody(z.object({ lastMessageId: z.number().int().nonnegative() })) },
-      responses: { ...noContent, ...authErrors, ...notFoundError },
-    }),
-    async (c) => {
-      const { id } = c.req.valid("param");
-      const { lastMessageId } = c.req.valid("json");
-      const me = await requireGroupMember(c, id);
-      await c.var.deps.db
-        .insert(groupReads)
-        .values({ groupId: id, memberId: me.id, lastReadMessageId: lastMessageId })
-        .onConflictDoUpdate({
-          target: [groupReads.groupId, groupReads.memberId],
-          // Never move the read marker backwards.
-          set: { lastReadMessageId: sql`greatest(${groupReads.lastReadMessageId}, ${lastMessageId})` },
-        });
       return c.body(null, 204);
     },
   );

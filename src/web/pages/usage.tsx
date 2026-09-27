@@ -83,7 +83,7 @@ export function UsagePage() {
           <ul className="divide-y divide-zinc-100 px-5 dark:divide-zinc-800">
             <Row label="Directory views" value={d.directoryViews} />
             <Row label="Sermons opened" value={d.sermonOpens} />
-            <Row label="Group chats opened" value={d.groupChatsOpened} />
+            <Row label="Chats opened" value={d.chatsOpened} />
             <Row label="Messages sent" value={d.messagesSent} />
             <Row label="Kids checked in" value={d.kidsCheckedIn} />
             <Row label="Leader attendance reports" value={d.leaderReports} />

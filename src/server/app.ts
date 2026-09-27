@@ -27,6 +27,7 @@ import { appAccountRoutes } from "./routes/app-accounts";
 import { directoryRoutes } from "./routes/directory";
 import { usageRoutes } from "./routes/usage";
 import { inBackground, mayTrack, platformFor, recordActive } from "./lib/usage";
+import { chatRoutes } from "./routes/chats";
 import { memberAppRoutes, publicMemberAppRoutes } from "./routes/member-app";
 import { userRoutes } from "./routes/users";
 
@@ -113,6 +114,7 @@ export function buildApi() {
     .route("/", appAccountRoutes)
     .route("/", publicMemberAppRoutes)
     .route("/", memberAppRoutes)
+    .route("/", chatRoutes)
     .route("/", usageRoutes);
 
   api.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {

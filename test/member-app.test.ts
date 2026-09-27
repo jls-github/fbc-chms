@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { groupMessages, users } from "../src/server/db/schema";
+import { chatMessages, users } from "../src/server/db/schema";
 import { parseSeriesList, parseSeriesSermons, parseSiteDate } from "../src/server/lib/sermons";
 import { withinOneEdit } from "../src/server/routes/app-accounts";
 import { createTestContext } from "./helpers";
@@ -325,8 +325,8 @@ describe("group chat", () => {
   it("lets group members talk, with unread counts and polling", async () => {
     const { a, b, group } = await setup();
     const g = `/app/groups/${group.id}`;
-    expect((await a.app.get("/app/groups")).json.groups).toEqual([
-      expect.objectContaining({ id: group.id, name: "Corinth House Church", memberCount: 2, unread: 0, lastMessage: null }),
+    expect((await a.app.get("/app/chats")).json.groups).toEqual([
+      expect.objectContaining({ id: group.id, kind: "group", name: "Corinth House Church", detail: "Sundays", memberCount: 2, unread: 0, lastMessage: null }),
     ]);
 
     const sent = await a.app.post(`${g}/messages`, { body: "  Welcome, everyone!  " });
@@ -334,9 +334,9 @@ describe("group chat", () => {
     expect(sent.json.message).toMatchObject({ body: "Welcome, everyone!", mine: true, author: { name: "Priscilla Tent" } });
     await a.app.post(`${g}/messages`, { body: "Potluck Sunday?" });
 
-    const theirs = (await b.app.get("/app/groups")).json.groups[0];
+    const theirs = (await b.app.get("/app/chats")).json.groups[0];
     expect(theirs).toMatchObject({ unread: 2, lastMessage: { body: "Potluck Sunday?", authorName: "Priscilla" } });
-    expect((await a.app.get("/app/groups")).json.groups[0].unread).toBe(0);
+    expect((await a.app.get("/app/chats")).json.groups[0].unread).toBe(0);
 
     const history = (await b.app.get(`${g}/messages`)).json;
     expect(history.messages.map((m: { body: string; mine: boolean }) => [m.body, m.mine])).toEqual([
@@ -345,9 +345,9 @@ describe("group chat", () => {
     ]);
     const lastId = history.messages.at(-1).id;
     await b.app.post(`${g}/read`, { lastMessageId: lastId });
-    expect((await b.app.get("/app/groups")).json.groups[0].unread).toBe(0);
+    expect((await b.app.get("/app/chats")).json.groups[0].unread).toBe(0);
     await b.app.post(`${g}/read`, { lastMessageId: 0 }); // never moves backwards
-    expect((await b.app.get("/app/groups")).json.groups[0].unread).toBe(0);
+    expect((await b.app.get("/app/chats")).json.groups[0].unread).toBe(0);
 
     await b.app.post(`${g}/messages`, { body: "Yes! I'll bring bread." });
     const poll = (await a.app.get(`${g}/messages?after=${lastId}`)).json.messages;
@@ -357,7 +357,7 @@ describe("group chat", () => {
   it("pages through history", async () => {
     const { a, group } = await setup();
     const g = `/app/groups/${group.id}`;
-    for (let i = 1; i <= 5; i++) await ctx.db.insert(groupMessages).values({ groupId: group.id, memberId: a.member.id, body: `msg ${i}` });
+    for (let i = 1; i <= 5; i++) await ctx.db.insert(chatMessages).values({ groupId: group.id, memberId: a.member.id, body: `msg ${i}` });
     const page1 = (await a.app.get(`${g}/messages?limit=2`)).json;
     expect(page1.messages.map((m: { body: string }) => m.body)).toEqual(["msg 4", "msg 5"]);
     expect(page1.hasMore).toBe(true);
@@ -369,7 +369,7 @@ describe("group chat", () => {
   it("keeps outsiders out and only lets authors delete their messages", async () => {
     const { a, b, outsider, group } = await setup();
     const g = `/app/groups/${group.id}`;
-    expect((await outsider.app.get("/app/groups")).json.groups).toEqual([]);
+    expect((await outsider.app.get("/app/chats")).json.groups).toEqual([]);
     expect((await outsider.app.get(`${g}/messages`)).status).toBe(404);
     expect((await outsider.app.post(`${g}/messages`, { body: "hi" })).status).toBe(404);
 
@@ -386,6 +386,56 @@ describe("group chat", () => {
     const statuses = [];
     for (let i = 0; i < 22; i++) statuses.push((await a.app.post(`/app/groups/${group.id}/messages`, { body: `m${i}` })).status);
     expect(statuses.filter((s) => s === 429)).toHaveLength(2);
+  });
+});
+
+describe("team chat", () => {
+  async function setup() {
+    const leader = await activeMember("Nehemiah", "Wall", "3605550121");
+    const helper = await activeMember("Ezra", "Scribe", "3605550122");
+    const outsider = await activeMember("Sanballat", "Horonite", "3605550123");
+    const team = (await staff.post("/teams", { name: "Rebuilding Crew", leaderId: leader.member.id })).json.team;
+    await staff.post(`/teams/${team.id}/members`, { memberId: helper.member.id, role: "Gate keeper" });
+    return { leader, helper, outsider, team };
+  }
+
+  it("includes the team's members and its leader", async () => {
+    const { leader, helper, outsider, team } = await setup();
+    const t = `/app/teams/${team.id}`;
+    const listed = (await leader.app.get("/app/chats")).json;
+    expect(listed.groups).toEqual([]);
+    expect(listed.teams).toEqual([
+      expect.objectContaining({ id: team.id, kind: "team", name: "Rebuilding Crew", detail: "Team leader", memberCount: 2, unread: 0 }),
+    ]);
+    expect((await helper.app.get("/app/chats")).json.teams[0].detail).toBe("Gate keeper");
+
+    expect((await leader.app.post(`${t}/messages`, { body: "Let us rise up and build." })).status).toBe(201);
+    expect((await helper.app.get("/app/chats")).json.teams[0]).toMatchObject({ unread: 1, lastMessage: { authorName: "Nehemiah" } });
+    const [msg] = (await helper.app.get(`${t}/messages`)).json.messages;
+    await helper.app.post(`${t}/read`, { lastMessageId: msg.id });
+    expect((await helper.app.get("/app/chats")).json.teams[0].unread).toBe(0);
+
+    expect((await outsider.app.get("/app/chats")).json.teams).toEqual([]);
+    expect((await outsider.app.get(`${t}/messages`)).status).toBe(404);
+    expect((await outsider.app.post(`${t}/messages`, { body: "hi" })).status).toBe(404);
+  });
+
+  it("keeps team and group chats separate even when ids match", async () => {
+    const { leader, team } = await setup();
+    const group = (await staff.post("/groups", { name: "Jerusalem Group" })).json.group;
+    await staff.post(`/groups/${group.id}/members`, { memberId: leader.member.id });
+    expect(group.id).toBe(team.id);
+    await leader.app.post(`/app/teams/${team.id}/messages`, { body: "team only" });
+    await leader.app.post(`/app/groups/${group.id}/messages`, { body: "group only" });
+    const bodies = async (p: string) => (await leader.app.get(p)).json.messages.map((m: { body: string }) => m.body);
+    expect(await bodies(`/app/teams/${team.id}/messages`)).toEqual(["team only"]);
+    expect(await bodies(`/app/groups/${group.id}/messages`)).toEqual(["group only"]);
+  });
+
+  it("closes the chat to someone taken off the team", async () => {
+    const { helper, team } = await setup();
+    await staff.delete(`/teams/${team.id}/members/${helper.member.id}`);
+    expect((await helper.app.get(`/app/teams/${team.id}/messages`)).status).toBe(404);
   });
 });
 

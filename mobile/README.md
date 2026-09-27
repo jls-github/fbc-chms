@@ -5,7 +5,7 @@ members sign in with their email or phone number and get:
 
 - **Directory** — households A–Z with photos, tap-to-call/text/email/maps
 - **Sermons** — the latest from fbcenumclaw.com (read from the website's Subsplash-powered media pages)
-- **Groups** — a chat for each community group they belong to
+- **Chats** — a chat for each community group and ministry team they belong to
 - **Profile** — what they share in the directory, their contact details, password, delete account
 
 It talks to the same API as the staff site (`/api/v1/app/*`, bearer tokens).

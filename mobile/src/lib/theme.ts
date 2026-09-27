@@ -18,6 +18,9 @@ const light = {
   brandText: "#ffffff",
   brandSoft: "#dfe9e7",
   accent: "#bb5e2d",
+  /** Brand olive, used to tell team chats apart from group chats. */
+  olive: "#6f6b2b",
+  oliveSoft: "#eceada",
   danger: "#b42318",
   dangerSoft: "#fdecea",
   mine: "#40605f",
@@ -38,6 +41,8 @@ const dark: typeof light = {
   brandText: "#ffffff",
   brandSoft: "#1d2a29",
   accent: "#d9814f",
+  olive: "#a8a44f",
+  oliveSoft: "#25261b",
   danger: "#f97066",
   dangerSoft: "#2a1614",
   mine: "#40605f",

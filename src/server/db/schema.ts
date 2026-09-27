@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   customType,
   primaryKey,
   date,
@@ -255,35 +256,46 @@ export const users = pgTable(
 // Group chat (member app)
 // ---------------------------------------------------------------------------
 
-export const groupMessages = pgTable(
-  "group_messages",
+/**
+ * Member app chat messages. Every group and every team has a chat; exactly one
+ * of groupId / teamId is set.
+ */
+export const chatMessages = pgTable(
+  "chat_messages",
   {
     id: serial("id").primaryKey(),
-    groupId: integer("group_id")
-      .notNull()
-      .references(() => groups.id, { onDelete: "cascade" }),
+    groupId: integer("group_id").references(() => groups.id, { onDelete: "cascade" }),
+    teamId: integer("team_id").references(() => teams.id, { onDelete: "cascade" }),
     /** Null if the author was later removed from the directory. */
     memberId: integer("member_id").references(() => members.id, { onDelete: "set null" }),
     body: text("body").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
-  (t) => [index("group_messages_group_id_idx").on(t.groupId, t.id)],
+  (t) => [
+    index("chat_messages_group_idx").on(t.groupId, t.id),
+    index("chat_messages_team_idx").on(t.teamId, t.id),
+    check("chat_messages_one_room", sql`num_nonnulls(${t.groupId}, ${t.teamId}) = 1`),
+  ],
 );
 
-/** How far each person has read in each group's chat (for unread counts). */
-export const groupReads = pgTable(
-  "group_reads",
+/** How far each person has read in each chat (for unread counts). */
+export const chatReads = pgTable(
+  "chat_reads",
   {
-    groupId: integer("group_id")
-      .notNull()
-      .references(() => groups.id, { onDelete: "cascade" }),
+    id: serial("id").primaryKey(),
+    groupId: integer("group_id").references(() => groups.id, { onDelete: "cascade" }),
+    teamId: integer("team_id").references(() => teams.id, { onDelete: "cascade" }),
     memberId: integer("member_id")
       .notNull()
       .references(() => members.id, { onDelete: "cascade" }),
     lastReadMessageId: integer("last_read_message_id").notNull().default(0),
   },
-  (t) => [primaryKey({ columns: [t.groupId, t.memberId] })],
+  (t) => [
+    uniqueIndex("chat_reads_group_member_idx").on(t.groupId, t.memberId),
+    uniqueIndex("chat_reads_team_member_idx").on(t.teamId, t.memberId),
+    check("chat_reads_one_room", sql`num_nonnulls(${t.groupId}, ${t.teamId}) = 1`),
+  ],
 );
 
 // ---------------------------------------------------------------------------

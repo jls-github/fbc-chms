@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { ChatGroup, Sermon } from "@shared/schemas";
+import type { ChatList, Sermon } from "@shared/schemas";
 import { api } from "./api";
 
 export const useSermons = () =>
@@ -9,5 +9,9 @@ export const useSermons = () =>
     staleTime: 10 * 60_000,
   });
 
-export const useGroups = (refetchInterval = 30_000) =>
-  useQuery({ queryKey: ["groups"], queryFn: () => api.get<{ groups: ChatGroup[] }>("/app/groups"), refetchInterval });
+/** My group and team chats. */
+export const useChats = (refetchInterval = 30_000) =>
+  useQuery({ queryKey: ["chats"], queryFn: () => api.get<ChatList>("/app/chats"), refetchInterval });
+
+export const unreadCount = (chats: ChatList | undefined) =>
+  [...(chats?.groups ?? []), ...(chats?.teams ?? [])].reduce((n, c) => n + c.unread, 0);

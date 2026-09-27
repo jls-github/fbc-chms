@@ -9,7 +9,7 @@ import { API_URL } from "../../../lib/api";
 import { useMe } from "../../../lib/auth";
 import { useDirectory } from "../../../lib/directory";
 import { longDate } from "../../../lib/format";
-import { useGroups, useSermons } from "../../../lib/queries";
+import { unreadCount, useChats, useSermons } from "../../../lib/queries";
 import { fonts, useTheme } from "../../../lib/theme";
 
 function greeting() {
@@ -64,13 +64,13 @@ export default function HomeScreen() {
   const me = useMe();
   const directory = useDirectory();
   const sermons = useSermons();
-  const groups = useGroups();
+  const chats = useChats();
 
   const user = me.data?.user;
   const member = me.data?.profile.member;
   const latest = sermons.data?.sermons[0];
-  const myGroups = groups.data?.groups ?? [];
-  const unread = myGroups.reduce((n, g) => n + g.unread, 0);
+  const myChats = [...(chats.data?.groups ?? []), ...(chats.data?.teams ?? [])];
+  const unread = unreadCount(chats.data);
   const households = directory.data?.filter((e) => e.householdId).length;
 
   // Two tiles per row on phones, three on wider screens.
@@ -88,7 +88,7 @@ export default function HomeScreen() {
   const openStaff = (path: string) =>
     Platform.OS === "web" ? window.open(path, "_blank", "noopener") : void WebBrowser.openBrowserAsync(`${API_URL}${path}`);
 
-  const refreshing = me.isRefetching || directory.isRefetching || sermons.isRefetching || groups.isRefetching;
+  const refreshing = me.isRefetching || directory.isRefetching || sermons.isRefetching || chats.isRefetching;
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: t.bg }}>
@@ -98,7 +98,7 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             tintColor={t.brand}
-            onRefresh={() => void Promise.all([me.refetch(), directory.refetch(), sermons.refetch(), groups.refetch()])}
+            onRefresh={() => void Promise.all([me.refetch(), directory.refetch(), sermons.refetch(), chats.refetch()])}
           />
         }
       >
@@ -155,16 +155,16 @@ export default function HomeScreen() {
           <Tile icon="play-circle" title="Sermons" detail={latest ? `Latest: ${latest.title}` : "Recent messages"} onPress={() => go("/sermons")} width={tileWidth} />
           <Tile
             icon="chatbubbles"
-            title="Groups"
+            title="Chats"
             detail={
-              myGroups.length === 0
-                ? "You're not in a group yet"
+              myChats.length === 0
+                ? "Your group and team chats"
                 : unread
                   ? `${unread} new ${unread === 1 ? "message" : "messages"}`
-                  : myGroups.map((g) => g.name).join(", ")
+                  : myChats.map((c) => c.name).join(", ")
             }
             badge={unread}
-            onPress={() => go("/groups")}
+            onPress={() => go("/chats")}
             width={tileWidth}
           />
           <Tile icon="person-circle" title="My profile" detail="Contact details and what you share" onPress={() => go("/profile")} width={tileWidth} />

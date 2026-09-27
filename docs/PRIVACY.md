@@ -14,7 +14,7 @@ not legal advice).
 | Kids check-in records: who, when, pickup code, who checked in/out | Child safety | Staff and check-in volunteers |
 | Accounts: email/phone, password (hashed with bcrypt), role | Signing in | Admins |
 | Sign-in sessions: device type, when last used (tokens stored only as hashes) | Security | — |
-| Group chat messages | The group chat | Members of that group |
+| Group and team chat messages | The chats | Members of that group, or that team and its leader |
 | Attendance headcounts | Ministry planning | Staff |
 | Anonymous usage statistics (below) | Understanding how the app is used | Staff and admins |
 
@@ -62,7 +62,7 @@ Implemented in `src/server/lib/usage.ts`, shown on the staff **Usage** page.
 
 - *Contact info* (name, email, phone, address) — collected, linked to the user,
   used for app functionality; not used for tracking.
-- *User content* (group chat messages, photos uploaded by staff) — app
+- *User content* (group and team chat messages, photos uploaded by staff) — app
   functionality.
 - *Identifiers* (account ID) — app functionality.
 - *Usage data* (product interaction) — collected as anonymous aggregates,

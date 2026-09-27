@@ -5,10 +5,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { ChatMessage } from "@shared/schemas";
-import { confirm, EmptyState, ErrorView, Loading } from "../../../components/ui";
-import { api, errorMessage } from "../../../lib/api";
-import { chatTime } from "../../../lib/format";
-import { useTheme } from "../../../lib/theme";
+import { confirm, EmptyState, ErrorView, Loading } from "../../../../components/ui";
+import { api, errorMessage } from "../../../../lib/api";
+import { chatTime } from "../../../../lib/format";
+import { useTheme } from "../../../../lib/theme";
 
 const POLL_MS = 4000;
 type Page = { messages: ChatMessage[]; hasMore: boolean };
@@ -20,11 +20,12 @@ const merge = (a: ChatMessage[], b: ChatMessage[]) => {
   return [...byId.values()].sort((x, y) => x.id - y.id);
 };
 
-export default function GroupChat() {
-  const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
+export default function Chat() {
+  const { kind, id, name } = useLocalSearchParams<{ kind: "groups" | "teams"; id: string; name?: string }>();
+  const noun = kind === "teams" ? "team" : "group";
   const t = useTheme();
   const qc = useQueryClient();
-  const base = `/app/groups/${id}`;
+  const base = `/app/${kind === "teams" ? "teams" : "groups"}/${id}`;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -74,7 +75,7 @@ export default function GroupChat() {
     const latest = messages.at(-1)?.id ?? 0;
     if (latest > lastRead.current) {
       lastRead.current = latest;
-      void api.post(`${base}/read`, { lastMessageId: latest }).then(() => qc.invalidateQueries({ queryKey: ["groups"] }));
+      void api.post(`${base}/read`, { lastMessageId: latest }).then(() => qc.invalidateQueries({ queryKey: ["chats"] }));
     }
   }, [messages, base, qc]);
 
@@ -107,7 +108,7 @@ export default function GroupChat() {
   };
 
   const remove = async (m: ChatMessage) => {
-    if (!(await confirm("Delete this message?", "It will be removed for everyone in the group.", "Delete", true))) return;
+    if (!(await confirm("Delete this message?", `It will be removed for everyone in the ${noun}.`, "Delete", true))) return;
     try {
       await api.delete(`${base}/messages/${m.id}`);
       setMessages((list) => list.map((x) => (x.id === m.id ? { ...x, deleted: true, body: "" } : x)));
@@ -116,7 +117,7 @@ export default function GroupChat() {
     }
   };
 
-  const title = name ?? "Group chat";
+  const title = name ?? (kind === "teams" ? "Team chat" : "Group chat");
   const header = <Stack.Screen options={{ title, headerStyle: { backgroundColor: t.card }, headerTintColor: t.brand, headerTitleStyle: { color: t.text } }} />;
   if (loading) return <>{header}<Loading /></>;
   if (error) return <>{header}<ErrorView error={error} onRetry={() => void load()} /></>;

@@ -47,7 +47,7 @@ export default function SermonScreen() {
                 style={({ pressed }) => [styles.row, { backgroundColor: t.card, borderColor: t.border, opacity: pressed ? 0.7 : 1 }]}
                 accessibilityRole="button"
               >
-                <Photo url={s.imageUrl} title={s.title} size={56} radius={8} />
+                <Photo url={s.thumbnailUrl} title={s.title} size={56} radius={8} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: t.text, fontWeight: "600", fontSize: 15 }} numberOfLines={2}>{s.title}</Text>
                   {s.date && <Text style={{ color: t.muted, fontSize: 13 }}>{longDate(s.date)}</Text>}

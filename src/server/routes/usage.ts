@@ -18,10 +18,10 @@ export const usageRoutes = createRouter().openapi(
     method: "get",
     path: "/usage",
     tags: ["Usage statistics"],
-    summary: "Anonymous usage statistics (staff and admins)",
+    summary: "Anonymous usage statistics (admins only)",
     description: "Aggregates only; see docs/PRIVACY.md for what's collected and how.",
     security,
-    middleware: [requireRole("admin", "staff")] as const,
+    middleware: [requireRole("admin")] as const,
     responses: { 200: jsonContent(UsageReport), ...authErrors },
   }),
   async (c) => {

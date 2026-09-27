@@ -36,11 +36,12 @@ const NAV = [
   { to: "/attendance", label: "Attendance", icon: ChartColumn },
   { to: "/checkin", label: "Kids check-in", icon: Baby },
   { to: "/app-accounts", label: "App accounts", icon: Smartphone },
-  { to: "/usage", label: "Usage", icon: Activity },
+  { to: "/usage", label: "Usage", icon: Activity, adminOnly: true },
 ];
 
 /** Volunteers only ever see check-in (the API enforces this too). */
-const navFor = (role: string | undefined) => (role === "volunteer" ? NAV.filter((n) => n.to === "/checkin") : NAV);
+const navFor = (role: string | undefined) =>
+  role === "volunteer" ? NAV.filter((n) => n.to === "/checkin") : NAV.filter((n) => !("adminOnly" in n) || role === "admin");
 const VOLUNTEER_PATHS = ["/checkin", "/settings"];
 
 type Theme = "light" | "dark" | "system";
@@ -208,6 +209,7 @@ export function AppLayout() {
   if (me.role === "volunteer" && !VOLUNTEER_PATHS.some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/checkin" replace />;
   }
+  if (me.role !== "admin" && location.pathname.startsWith("/usage")) return <Navigate to="/" replace />;
 
   const openSearch = () => {
     setDrawerOpen(false);

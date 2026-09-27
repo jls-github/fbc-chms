@@ -24,6 +24,10 @@ or shared with third parties. Sermons are shown from the church's Subsplash
 account; playing one loads Subsplash's player, which is covered by Subsplash's
 own privacy policy.
 
+Every Monday the app posts the week's sermon (title, series, speaker and a link)
+to the church's Facebook Page, using a token for that Page only. No member data
+is sent to Facebook.
+
 ## People's controls
 
 - **Directory sharing** (member app → Profile): show or hide phone, email,

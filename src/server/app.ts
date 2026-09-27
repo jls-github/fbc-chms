@@ -30,6 +30,7 @@ import { inBackground, mayTrack, platformFor, recordActive } from "./lib/usage";
 import { chatRoutes } from "./routes/chats";
 import { memberAppRoutes, publicMemberAppRoutes } from "./routes/member-app";
 import { userRoutes } from "./routes/users";
+import { facebookRoutes } from "./routes/facebook";
 import { privacyPage } from "./pages/privacy";
 
 export const API_VERSION = "v1";
@@ -116,7 +117,8 @@ export function buildApi() {
     .route("/", publicMemberAppRoutes)
     .route("/", memberAppRoutes)
     .route("/", chatRoutes)
-    .route("/", usageRoutes);
+    .route("/", usageRoutes)
+    .route("/", facebookRoutes);
 
   api.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", {
     type: "http",
@@ -159,7 +161,8 @@ const csp = (imgSrc: string, frameSrc = "'none'") => [
   "form-action 'self'",
 ].join("; ");
 
-const CSP = csp("'self' data:");
+/** The staff site shows sermon thumbnails (Settings → Facebook), hosted by Subsplash. */
+const CSP = csp("'self' data: https://images.subsplash.com");
 /** The member app also shows sermon artwork and embeds the sermon player, both hosted by Subsplash. */
 const MEMBER_APP_CSP = csp("'self' data: blob: https://images.subsplash.com", "https://subsplash.com https://*.subsplash.com");
 

@@ -1,12 +1,13 @@
 # syntax=docker/dockerfile:1
 
-FROM node:22-slim AS build
-# esbuild's Go runtime can crash ("concurrent map writes") under QEMU when an
-# amd64 image is built on an Apple Silicon Mac; one thread keeps it reliable.
-ENV GOMAXPROCS=1
+# The build stage runs on the builder's own CPU (e.g. an Apple Silicon Mac) rather
+# than under emulation: its output is plain JavaScript and every production
+# dependency is pure JS, so the result runs on the amd64 server unchanged.
+FROM --platform=$BUILDPLATFORM node:22-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+COPY mobile/package.json mobile/package-lock.json ./mobile/
+RUN npm ci && npm ci --prefix mobile
 COPY . .
 RUN npm run build && npm prune --omit=dev
 

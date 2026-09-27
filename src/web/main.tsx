@@ -13,6 +13,7 @@ import { MemberFormPage, MemberPage } from "./pages/member";
 import { GroupPage, GroupsPage, TeamPage, TeamsPage } from "./pages/ministry";
 import { PeoplePage } from "./pages/people";
 import { SettingsPage } from "./pages/settings";
+import "@fontsource-variable/figtree";
 import "./styles.css";
 
 const queryClient = new QueryClient({
@@ -63,6 +64,8 @@ const router = createBrowserRouter([
       { path: "teams/:id", element: <TeamPage /> },
       { path: "attendance", element: <AttendancePage /> },
       { path: "checkin", lazy: () => import("./pages/checkin").then((m) => ({ Component: m.CheckinPage })) },
+      { path: "app-accounts", lazy: () => import("./pages/app-accounts").then((m) => ({ Component: m.AppAccountsPage })) },
+      { path: "usage", lazy: () => import("./pages/usage").then((m) => ({ Component: m.UsagePage })) },
       { path: "settings", element: <SettingsPage /> },
       { path: "*", element: <NotFound /> },
     ],

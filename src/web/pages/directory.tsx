@@ -1,5 +1,6 @@
 import clsx from "clsx";
-import { BookUser, Church, Mail, MapPin, Phone, Printer, Search } from "lucide-react";
+import { BookUser, Mail, MapPin, Phone, Printer, Search } from "lucide-react";
+import { ColorBlocks } from "../components/brand";
 import { useMemo, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import { MEMBER_STATUSES, MEMBER_STATUS_LABELS, type MemberStatus } from "@shared/constants";
@@ -325,19 +326,20 @@ export function DirectoryPrintPage() {
 
       {/* The document: shown as sheets on screen, flows into letter pages when printed. */}
       <div className="mx-auto my-6 max-w-[8.5in] bg-white text-black shadow-lg print:my-0 print:max-w-none print:shadow-none">
-        <section className="directory-cover flex min-h-[10in] flex-col items-center justify-center p-[0.5in] text-center print:min-h-[9.9in] print:p-0">
-          <span className="flex size-16 items-center justify-center rounded-2xl border-2 border-black">
-            <Church className="size-9" aria-hidden />
-          </span>
-          <p className="mt-6 text-[14pt] tracking-[0.3em] uppercase">FBC Enumclaw</p>
-          <h1 className="mt-2 text-[34pt] leading-tight font-bold">Church Directory</h1>
-          <p className="mt-3 text-[13pt]">{printed}</p>
-          <p className="mt-10 text-[10pt] text-zinc-600">
-            {pluralize(data.entries.length, "listing")} · {pluralize(people, "person", "people")}
-          </p>
-          <p className="mt-auto max-w-[5in] text-[8pt] text-zinc-500">
-            This directory is for members and friends of FBC Enumclaw. Please don't share it outside the church family.
-          </p>
+        <section className="directory-cover flex min-h-[10in] flex-col items-center text-center print:min-h-[9.9in]">
+          {/* Color blocks print in color; keep them even when "background graphics" is off. */}
+          <ColorBlocks className="h-[3.4in] w-full [print-color-adjust:exact]" />
+          <div className="flex flex-1 flex-col items-center px-[0.5in] pt-[0.6in] print:px-0">
+            <img src="/brand/logo-primary.png" alt="First Baptist Church" className="h-[1.9in] w-auto" />
+            <h1 className="mt-[0.45in] text-[30pt] leading-tight font-bold text-ink">Church Directory</h1>
+            <p className="mt-2 text-[13pt] text-ink">Enumclaw, Washington · {printed}</p>
+            <p className="mt-8 text-[10pt] text-zinc-600">
+              {pluralize(data.entries.length, "listing")} · {pluralize(people, "person", "people")}
+            </p>
+            <p className="mt-auto max-w-[5in] pb-[0.3in] font-serif text-[9pt] text-zinc-500">
+              This directory is for members and friends of First Baptist Church. Please don't share it outside the church family.
+            </p>
+          </div>
         </section>
 
         <div className="px-[0.5in] pb-[0.5in] print:p-0">

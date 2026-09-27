@@ -1,9 +1,10 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowLeft, Check, Church, CircleAlert, Plus, Printer, Search, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, CircleAlert, Plus, Printer, Search, Trash2, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import type { KioskCheckinResult, KioskChildInput, KioskHousehold, KioskRegisterInput } from "@shared/schemas";
+import { ColorBlocks, Logo } from "../components/brand";
 import { Button, ErrorNotice, Field, Input, Modal } from "../components/ui";
 import { api, ApiError, errorMessage } from "../lib/api";
 import { ageLabel, formatDay, todayIso } from "../lib/format";
@@ -22,7 +23,8 @@ const DONE_MS = 30_000;
 
 function KioskShell({ children, onBack, footer }: { children: ReactNode; onBack?: () => void; footer?: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-gradient-to-b from-brand-50 to-white text-zinc-900 select-none print:hidden dark:from-zinc-900 dark:to-zinc-950 dark:text-zinc-100">
+    <div className="flex min-h-dvh flex-col bg-canvas text-zinc-900 select-none print:hidden dark:bg-zinc-950 dark:text-zinc-100">
+      <ColorBlocks className="h-2 shrink-0" />
       <header className="flex h-20 shrink-0 items-center justify-between px-6">
         {onBack ? (
           <button type="button" onClick={onBack} className="flex h-14 items-center gap-2 rounded-2xl px-4 text-lg font-medium text-zinc-600 active:bg-zinc-200/60 dark:text-zinc-300">
@@ -31,11 +33,9 @@ function KioskShell({ children, onBack, footer }: { children: ReactNode; onBack?
         ) : (
           <span />
         )}
-        <span className="flex items-center gap-2.5">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm">
-            <Church className="size-6" aria-hidden />
-          </span>
-          <span className="text-lg font-semibold">FBC Enumclaw Kids</span>
+        <span className="flex flex-col items-center">
+          <Logo className="h-10" />
+          <span className="mt-1 text-xs font-semibold tracking-[0.14em] text-zinc-500 uppercase">Kids check-in</span>
         </span>
         <span className="w-24" />
       </header>

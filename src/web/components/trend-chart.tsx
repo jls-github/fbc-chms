@@ -6,7 +6,7 @@ type Point = { date: string; value: number; note?: string; dateLabel?: string };
 /**
  * Single-series line chart for change over time. The series colour is
  * validated for contrast against both surfaces (see the dataviz guidance):
- * light #3f55d6, dark #6b7ff0. Single series → no legend; the card title names it.
+ * brand teal — light #40605f, dark #6f978f. Single series → no legend; the card title names it.
  */
 export function TrendChart({ points, label, height = 220 }: { points: Point[]; label: string; height?: number }) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -31,7 +31,10 @@ export function TrendChart({ points, label, height = 220 }: { points: Point[]; l
     const min = Math.min(...values, max);
     // Nice ticks: zero-based if the range is close to zero, otherwise padded.
     const lo = min < max * 0.4 ? 0 : Math.floor((min * 0.9) / 10) * 10;
-    const step = Math.max(1, Math.ceil((max - lo) / 4 / 5) * 5);
+    // A "nice" step (1, 2, 5, 10, 20, 50…) so four gridlines cover the data without wasted space.
+    const raw = Math.max((max - lo) / 4, 0.25);
+    const magnitude = 10 ** Math.floor(Math.log10(raw));
+    const step = Math.max(1, ([1, 2, 5, 10].find((m) => m * magnitude >= raw) ?? 10) * magnitude);
     const hi = lo + step * 4;
     return {
       x: (i: number) => pad.left + (points.length <= 1 ? innerW / 2 : (i / (points.length - 1)) * innerW),
@@ -55,7 +58,7 @@ export function TrendChart({ points, label, height = 220 }: { points: Point[]; l
   };
 
   return (
-    <div ref={wrap} className="relative text-zinc-400 dark:text-zinc-500 [--series:#3f55d6] dark:[--series:#6b7ff0]">
+    <div ref={wrap} className="relative text-zinc-400 dark:text-zinc-500 [--series:#40605f] dark:[--series:#6f978f]">
       <svg
         width={width}
         height={height}

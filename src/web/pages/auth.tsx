@@ -11,7 +11,7 @@ export function LoginPage() {
   const login = useLogin();
   const navigate = useNavigate();
   const location = useLocation();
-  const form = useForm({ email: "", password: "" });
+  const form = useForm({ identifier: "", password: "" });
   const from = (location.state as { from?: string } | null)?.from ?? "/";
 
   if (me) return <Navigate to={from} replace />;
@@ -26,8 +26,8 @@ export function LoginPage() {
         }}
       >
         {form.formError && !Object.keys(form.errors).length && <ErrorNotice error={new Error(form.formError)} />}
-        <Field label="Email" htmlFor="email" error={form.errors.email}>
-          <Input type="email" autoComplete="username" required autoFocus {...form.bind("email")} />
+        <Field label="Email or phone" htmlFor="identifier" error={form.errors.identifier}>
+          <Input type="text" inputMode="email" autoComplete="username" autoCapitalize="none" required autoFocus {...form.bind("identifier")} />
         </Field>
         <Field label="Password" htmlFor="password" error={form.errors.password}>
           <Input type="password" autoComplete="current-password" required {...form.bind("password")} />

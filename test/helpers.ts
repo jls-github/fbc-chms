@@ -9,6 +9,11 @@ import * as schema from "../src/server/db/schema";
 import type { Mail } from "../src/server/lib/mailer";
 import { authLimiter } from "../src/server/routes/auth";
 import { leaderReportLimits } from "../src/server/routes/report-links";
+import { memberAppLimits } from "../src/server/routes/member-app";
+import { resetSigningCache } from "../src/server/lib/signing";
+import { flushUsage, resetUsageCaches } from "../src/server/lib/usage";
+import { resetSermonCache } from "../src/server/lib/sermons";
+import type { Sermon } from "../src/shared/schemas";
 
 export const PASSWORD = "correct horse battery";
 
@@ -19,15 +24,22 @@ export async function createTestContext() {
   await migrate(pg, { migrationsFolder: MIGRATIONS_FOLDER });
   const db = pg as unknown as Db;
   const mail: Mail[] = [];
-  const app = createApp({ db, mailer: async (m) => void mail.push(m) });
+  const sermons: Sermon[] = [];
+  const app = createApp({ db, mailer: async (m) => void mail.push(m), scrapeSermons: async () => sermons });
 
   async function reset() {
+    await flushUsage();
     authLimiter.reset();
     leaderReportLimits.reset();
+    resetSigningCache();
+    resetUsageCaches();
+    resetSermonCache();
+    sermons.length = 0;
+    memberAppLimits.reset();
     mail.length = 0;
     await db.execute(
       sql.raw(
-        "truncate family_photos, checkins, report_links, attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
+        "truncate usage_counters, usage_actives, usage_active_totals, group_reads, group_messages, app_settings, family_photos, checkins, report_links, attendance_reports, team_memberships, group_memberships, teams, groups, members, families, password_resets, sessions, users restart identity cascade",
       ),
     );
   }
@@ -77,5 +89,5 @@ export async function createTestContext() {
     };
   }
 
-  return { app, db, mail, reset, createUser, signIn, client, close: () => pglite.close() };
+  return { app, db, mail, sermons, reset, createUser, signIn, client, close: () => pglite.close() };
 }

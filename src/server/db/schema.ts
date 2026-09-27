@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   customType,
+  primaryKey,
   date,
   index,
   integer,
@@ -12,7 +13,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, MEMBER_STATUSES, SESSION_KINDS, USER_ROLES } from "@shared/constants";
+import { ATTENDANCE_EVENT_TYPES, ATTENDANCE_SOURCES, MEMBER_STATUSES, SESSION_KINDS, USER_ROLES, USER_STATUSES } from "@shared/constants";
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
 
@@ -27,6 +28,7 @@ const timestamps = {
 export const memberStatus = pgEnum("member_status", MEMBER_STATUSES);
 export const attendanceEventType = pgEnum("attendance_event_type", ATTENDANCE_EVENT_TYPES);
 export const userRole = pgEnum("user_role", USER_ROLES);
+export const userStatus = pgEnum("user_status", USER_STATUSES);
 
 // ---------------------------------------------------------------------------
 // People
@@ -73,6 +75,11 @@ export const members = pgTable(
     medicalNotes: text("medical_notes"),
     /** Leave this person out of the printed church directory. */
     directoryOptOut: boolean("directory_opt_out").notNull().default(false),
+    /** What this person shares in the directory (they can change these in the member app). */
+    dirShowPhone: boolean("dir_show_phone").notNull().default(true),
+    dirShowEmail: boolean("dir_show_email").notNull().default(true),
+    dirShowAddress: boolean("dir_show_address").notNull().default(true),
+    dirShowBirthday: boolean("dir_show_birthday").notNull().default(true),
     familyId: integer("family_id").references(() => families.id, { onDelete: "set null" }),
     ...timestamps,
   },
@@ -207,18 +214,126 @@ export const checkins = pgTable(
 // Staff accounts & authentication
 // ---------------------------------------------------------------------------
 
+/**
+ * Everyone who can sign in: staff (admin/staff/volunteer) and church members
+ * using the member app. Members sign in with an email or a phone number, and
+ * their account is linked to exactly one person in `members`.
+ */
 export const users = pgTable(
   "users",
   {
     id: serial("id").primaryKey(),
-    email: text("email").notNull(),
+    email: text("email"),
+    /** Digits only (e.g. "3605550142"), so any formatting matches at sign-in. */
+    phone: text("phone"),
     name: text("name"),
-    passwordDigest: text("password_digest").notNull(),
+    /** Null until an invited account is claimed. */
+    passwordDigest: text("password_digest"),
     role: userRole("role").notNull().default("staff"),
+    status: userStatus("status").notNull().default("active"),
+    memberId: integer("member_id").references(() => members.id, { onDelete: "set null" }),
+    /** What a self-signup told us about themselves, for staff to match against the directory. */
+    signupFirstName: text("signup_first_name"),
+    signupLastName: text("signup_last_name"),
+    inviteTokenHash: text("invite_token_hash"),
+    inviteExpiresAt: timestamp("invite_expires_at", { withTimezone: true }),
+    /** Leave this account out of anonymous usage statistics. */
+    usageOptOut: boolean("usage_opt_out").notNull().default(false),
+    reviewedBy: text("reviewed_by"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     ...timestamps,
   },
-  (t) => [uniqueIndex("users_email_idx").on(sql`lower(${t.email})`)],
+  (t) => [
+    uniqueIndex("users_email_idx").on(sql`lower(${t.email})`),
+    uniqueIndex("users_phone_idx").on(t.phone),
+    uniqueIndex("users_member_idx").on(t.memberId),
+    uniqueIndex("users_invite_token_idx").on(t.inviteTokenHash),
+  ],
 );
+
+// ---------------------------------------------------------------------------
+// Group chat (member app)
+// ---------------------------------------------------------------------------
+
+export const groupMessages = pgTable(
+  "group_messages",
+  {
+    id: serial("id").primaryKey(),
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    /** Null if the author was later removed from the directory. */
+    memberId: integer("member_id").references(() => members.id, { onDelete: "set null" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [index("group_messages_group_id_idx").on(t.groupId, t.id)],
+);
+
+/** How far each person has read in each group's chat (for unread counts). */
+export const groupReads = pgTable(
+  "group_reads",
+  {
+    groupId: integer("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    memberId: integer("member_id")
+      .notNull()
+      .references(() => members.id, { onDelete: "cascade" }),
+    lastReadMessageId: integer("last_read_message_id").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.groupId, t.memberId] })],
+);
+
+// ---------------------------------------------------------------------------
+// Usage statistics (privacy-preserving; see src/server/lib/usage.ts)
+// ---------------------------------------------------------------------------
+
+/** Anonymous daily counters, e.g. ("2026-09-27", "sermon_open", "ggm4jyc", 4). No user identifiers. */
+export const usageCounters = pgTable(
+  "usage_counters",
+  {
+    day: date("day").notNull(),
+    metric: text("metric").notNull(),
+    dimension: text("dimension").notNull().default(""),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.metric, t.dimension] })],
+);
+
+/**
+ * Who has been active in the *current* day/week/month, as keyed hashes that
+ * can't be reversed. Each period has its own random key; when the period ends
+ * we keep only the total (usage_active_totals) and delete these rows and the key.
+ */
+export const usageActives = pgTable(
+  "usage_actives",
+  {
+    period: text("period", { enum: ["day", "week", "month"] }).notNull(),
+    periodStart: date("period_start").notNull(),
+    platform: text("platform").notNull(),
+    visitor: text("visitor").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.period, t.periodStart, t.platform, t.visitor] })],
+);
+
+export const usageActiveTotals = pgTable(
+  "usage_active_totals",
+  {
+    period: text("period", { enum: ["day", "week", "month"] }).notNull(),
+    periodStart: date("period_start").notNull(),
+    platform: text("platform").notNull(),
+    count: integer("count").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.period, t.periodStart, t.platform] })],
+);
+
+/** Small key/value store for server-generated settings (e.g. the URL-signing secret). */
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});
 
 /**
  * One row per signed-in browser or mobile device. Only a SHA-256 hash of the

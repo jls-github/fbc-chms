@@ -27,7 +27,7 @@ import { serviceDate } from "../lib/church-time";
 import { clientIp } from "../lib/client-ip";
 import { ApiError, notFound } from "../lib/errors";
 import { authErrors, jsonBody, jsonContent, noContent, notFoundError, security, validationError } from "../lib/openapi";
-import { createRouter, type AppEnv } from "../lib/router";
+import { createRouter, whoIs, type AppEnv } from "../lib/router";
 import { likePattern, prefixPattern } from "../lib/serializers";
 import type { Context } from "hono";
 
@@ -46,7 +46,7 @@ const formatPhone = (v: string) => {
 
 /** Who did it, for the audit trail: the kiosk's name, or the staff member's email. */
 const actor = (c: Context<AppEnv>) =>
-  c.var.session.kind === "kiosk" ? `Kiosk: ${c.var.session.label ?? "unnamed"}` : c.var.user.email;
+  c.var.session.kind === "kiosk" ? `Kiosk: ${c.var.session.label ?? "unnamed"}` : whoIs(c.var.user);
 
 async function loadHouseholds(db: Db, familyIds: number[], day: string) {
   if (familyIds.length === 0) return [];
@@ -350,7 +350,7 @@ export const rosterRoutes = createRouter()
       const { checkinIds } = c.req.valid("json");
       const updated = await c.var.deps.db
         .update(checkins)
-        .set({ checkedOutAt: new Date(), checkedOutBy: c.var.user.email })
+        .set({ checkedOutAt: new Date(), checkedOutBy: whoIs(c.var.user) })
         .where(and(inArray(checkins.id, checkinIds), isNull(checkins.checkedOutAt)))
         .returning({ id: checkins.id });
       return c.json({ checkedOut: updated.length }, 200);
@@ -389,19 +389,19 @@ export const rosterRoutes = createRouter()
     }),
     async (c) => {
       const rows = await c.var.deps.db
-        .select({ session: sessions, email: users.email })
+        .select({ session: sessions, user: users })
         .from(sessions)
         .innerJoin(users, eq(users.id, sessions.userId))
         .where(and(eq(sessions.kind, "kiosk"), sql`${sessions.expiresAt} > now()`))
         .orderBy(asc(sessions.createdAt));
       return c.json(
         {
-          kiosks: rows.map(({ session, email }) => ({
+          kiosks: rows.map(({ session, user }) => ({
             id: session.id,
             label: session.label,
             createdAt: session.createdAt.toISOString(),
             lastUsedAt: session.lastUsedAt.toISOString(),
-            setUpBy: email,
+            setUpBy: whoIs(user),
           })),
         },
         200,

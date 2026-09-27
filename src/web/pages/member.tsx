@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Cake, CircleAlert, HandHeart, House, Mail, MapPin, Pencil, Phone, Plus, Trash2, UsersRound, X } from "lucide-react";
+import { Cake, CircleAlert, HandHeart, Link2, Smartphone, House, Mail, MapPin, Pencil, Phone, Plus, Trash2, UsersRound, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { MEMBER_STATUSES, MEMBER_STATUS_LABELS, type MemberStatus } from "@shared/constants";
@@ -28,7 +28,10 @@ import {
 import { api, errorMessage } from "../lib/api";
 import { useForm } from "../lib/form";
 import { age, formatDay, fullName } from "../lib/format";
-import { useDeleteMember, useFamilies, useGroups, useMember, useSaveFamily, useSaveMember, useTeams } from "../lib/queries";
+import { useAppAccountActions, useDeleteMember, useFamilies, useGroups, useMember, useSaveFamily, useSaveMember, useTeams } from "../lib/queries";
+import { formatPhone } from "@shared/phone";
+import type { InviteResponse } from "@shared/schemas";
+import { InvitationDialog } from "../components/invitation-dialog";
 
 function useIdParam() {
   return Number(useParams().id);
@@ -155,6 +158,63 @@ function MembershipsCard({ member }: { member: MemberDetail }) {
   );
 }
 
+function MemberAppCard({ member }: { member: MemberDetail }) {
+  const { invite, link } = useAppAccountActions();
+  const toast = useToast();
+  const [invitation, setInvitation] = useState<InviteResponse | null>(null);
+  const account = member.appAccount;
+  const staffLogin = member.linkableStaffLogin;
+  const status = !account
+    ? staffLogin
+      ? `${member.firstName} has a staff login (${staffLogin.email}). Link it so they can use the app with the same sign-in.`
+      : "Not using the app yet."
+    : account.role !== "member"
+      ? `Uses the app with their staff login (${account.email ?? formatPhone(account.phone)}).`
+      : account.status === "active"
+        ? `Using the app (signs in with ${account.email ?? formatPhone(account.phone)}).`
+        : account.status === "invited"
+          ? `Invited — hasn't set up their account yet${account.inviteExpiresAt ? ` (code expires ${formatDay(account.inviteExpiresAt.slice(0, 10))})` : ""}.`
+          : account.status === "disabled"
+            ? "Their app account is turned off."
+            : "Signed up and waiting for review.";
+
+  let action: ReactNode = null;
+  if (!account && staffLogin) {
+    action = (
+      <Button
+        size="sm"
+        icon={<Link2 className="size-4" />}
+        loading={link.isPending}
+        onClick={() =>
+          link.mutate(
+            { id: staffLogin.id, memberId: member.id },
+            { onSuccess: () => toast("Staff login linked — they can now use the app"), onError: (e) => toast(errorMessage(e), "error") },
+          )
+        }
+      >
+        Link their staff login
+      </Button>
+    );
+  } else if (!account || account.status === "invited") {
+    action = (
+      <Button
+        size="sm"
+        icon={<Smartphone className="size-4" />}
+        loading={invite.isPending}
+        onClick={() => invite.mutate(member.id, { onSuccess: setInvitation, onError: (e) => toast(errorMessage(e), "error") })}
+      >
+        {account ? "New code" : "Invite to app"}
+      </Button>
+    );
+  }
+  return (
+    <Card>
+      <CardHeader title="Member app" description={status} action={action} />
+      {invitation && <InvitationDialog invitation={invitation} name={member.firstName} onClose={() => setInvitation(null)} />}
+    </Card>
+  );
+}
+
 export function MemberPage() {
   const id = useIdParam();
   const { data: member, isLoading, error } = useMember(id);
@@ -270,6 +330,8 @@ export function MemberPage() {
               )}
             </div>
           </Card>
+
+          {!member.isChild && <MemberAppCard member={member} />}
 
           {member.notes && (
             <Card>

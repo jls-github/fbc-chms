@@ -1,9 +1,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AttendanceEventType, MemberStatus, SessionKind, UserRole } from "@shared/constants";
+import type { AttendanceEventType, MemberStatus, SessionKind, UserRole, UserStatus } from "@shared/constants";
 import type {
   AttendanceInput,
   AttendanceReport,
+  AppAccount,
   Dashboard,
+  InviteResponse,
   DirectoryResponse,
   Family,
   Group,
@@ -19,7 +21,17 @@ import type {
 import { api } from "./api";
 import { uploadFamilyPhoto } from "./photo";
 
-export type User = { id: number; email: string; name: string | null; role: UserRole; createdAt: string };
+export type User = {
+  id: number;
+  email: string | null;
+  phone: string | null;
+  name: string | null;
+  role: UserRole;
+  status: UserStatus;
+  memberId: number | null;
+  usageOptOut: boolean;
+  createdAt: string;
+};
 
 /** Anything that changes people or memberships can affect most screens; keep it simple and refetch them. */
 const PEOPLE_KEYS = [["members"], ["member"], ["families"], ["family"], ["groups"], ["group"], ["teams"], ["team"], ["dashboard"]];
@@ -47,7 +59,7 @@ export const useMe = () =>
 export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { email: string; password: string }) => api.post<{ user: User }>("/auth/login", input),
+    mutationFn: (input: { identifier: string; password: string }) => api.post<{ user: User }>("/auth/login", input),
     // Refetch so the session kind comes along with the user.
     onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
   });
@@ -335,5 +347,40 @@ export function useFamilyPhoto(familyId: number) {
   return {
     upload: useMutation({ mutationFn: (file: File) => uploadFamilyPhoto(familyId, file), onSuccess: () => invalidate(PHOTO_KEYS) }),
     remove: useMutation({ mutationFn: () => api.delete(`/families/${familyId}/photo`), onSuccess: () => invalidate(PHOTO_KEYS) }),
+  };
+}
+
+// ------------------------------------------------------------- app accounts
+
+export const useAppAccounts = (status: UserStatus | "all", enabled = true) =>
+  useQuery({
+    queryKey: ["app-accounts", status],
+    queryFn: () => api.get<{ accounts: AppAccount[]; pendingCount: number }>(`/app-accounts?status=${status}`),
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+
+const ACCOUNT_KEYS = [["app-accounts"], ["member"], ["members"], ["families"], ["family"], ["directory"], ["dashboard"]];
+
+export function useAppAccountActions() {
+  const invalidate = useInvalidate();
+  const done = { onSuccess: () => invalidate(ACCOUNT_KEYS) };
+  return {
+    approve: useMutation({
+      mutationFn: ({ id, ...input }: { id: number; memberId: number } | { id: number; createMember: true }) =>
+        api.post(`/app-accounts/${id}/approve`, input),
+      ...done,
+    }),
+    reject: useMutation({ mutationFn: (id: number) => api.post(`/app-accounts/${id}/reject`), ...done }),
+    setStatus: useMutation({
+      mutationFn: ({ id, status }: { id: number; status: "active" | "disabled" }) => api.post(`/app-accounts/${id}/status`, { status }),
+      ...done,
+    }),
+    invite: useMutation({ mutationFn: (memberId: number) => api.post<InviteResponse>(`/members/${memberId}/app-invite`), ...done }),
+    /** Link any login (e.g. a staff login) to a person, or unlink it with memberId: null. */
+    link: useMutation({
+      mutationFn: ({ id, memberId }: { id: number; memberId: number | null }) => api.post(`/app-accounts/${id}/link`, { memberId }),
+      onSuccess: () => invalidate([...ACCOUNT_KEYS, ["users"], ["me"]]),
+    }),
   };
 }

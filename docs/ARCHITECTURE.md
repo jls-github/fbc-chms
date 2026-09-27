@@ -63,9 +63,38 @@ breaking API clients.
   source.
 - **UI:** a "My tasks" view plus a board by status.
 
-### Native mobile app
+### Member app (built)
 
-Ready today: bearer-token auth, the OpenAPI spec, stable JSON shapes, and CORS
-isn't needed for native apps. When building it, add push-notification device
-registration (`device_tokens` table) and pagination on list endpoints as the
-directory grows.
+`mobile/` is an Expo app (iOS, Android, web) for church members; see
+`mobile/README.md`. It uses `/api/v1/app/*` with bearer tokens, and its web
+build is served at `/app`.
+
+**Accounts and reconciliation.** Everyone who signs in is a row in `users`;
+members have `role = member` and are linked to exactly one person
+(`users.member_id`, unique).
+
+- *Self sign-up* creates a `pending` account. We can't verify the email/phone
+  they typed, so nothing is linked automatically: staff review it on **App
+  accounts**, where likely matches are suggested (same email or phone, same or
+  one-letter-off last name, same or similar first name), and approve it as an
+  existing person or as a new one — or turn it down.
+- *Staff invitation* (person → **Invite to app**) creates an `invited` account
+  already linked to the person, with a one-time code (14 days) shared by text or
+  email. Claiming it sets a password.
+- *Collisions:* approving a sign-up for someone with an unclaimed invitation
+  replaces the invitation; someone with an active account is a conflict. A
+  sign-up using an invited person's email/phone is pointed to their code; an
+  invitation for someone whose sign-up is pending is pointed to the review queue.
+- *Staff* can link their own login to their person record to use the app.
+
+**Privacy.** Each person chooses whether their phone, email, address and
+birthday appear in the directory (or opts out entirely); the app and the
+printed directory both honor it. Household photos in the app use signed,
+expiring URLs because image tags can't send bearer tokens.
+
+**Group chat** is per community group, limited to its members, with polling
+(4 s while a chat is open), unread counts, and author-only deletion.
+
+**Next:** push notifications for new messages (device-token registration plus
+APNs/FCM via Expo push), and email/SMS verification so self-sign-ups that match
+a verified email or phone can be linked without staff review.

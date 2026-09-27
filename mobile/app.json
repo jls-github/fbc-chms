@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "FBC Enumclaw",
+    "slug": "fbc-enumclaw",
+    "version": "1.0.0",
+    "scheme": "fbcenumclaw",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fbcenumclaw.app"
+    },
+    "android": {
+      "package": "com.fbcenumclaw.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#3f55d6",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "First Baptist Church",
+      "shortName": "FBC",
+      "themeColor": "#40605f"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-image",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": false,
+      "baseUrl": "/app"
+    }
+  }
+}

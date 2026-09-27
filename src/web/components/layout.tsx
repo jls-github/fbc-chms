@@ -1,9 +1,10 @@
 import clsx from "clsx";
 import {
+  Activity,
   Baby,
+  Smartphone,
   BookUser,
   ChartColumn,
-  Church,
   House,
   LayoutDashboard,
   LogOut,
@@ -20,7 +21,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { useLogout, useMe } from "../lib/queries";
+import { useAppAccounts, useLogout, useMe } from "../lib/queries";
+import { Logo, ColorBlocks } from "./brand";
 import { CommandPalette } from "./command-palette";
 import { IconButton, useToast } from "./ui";
 
@@ -33,6 +35,8 @@ const NAV = [
   { to: "/teams", label: "Teams", icon: HandHeart },
   { to: "/attendance", label: "Attendance", icon: ChartColumn },
   { to: "/checkin", label: "Kids check-in", icon: Baby },
+  { to: "/app-accounts", label: "App accounts", icon: Smartphone },
+  { to: "/usage", label: "Usage", icon: Activity },
 ];
 
 /** Volunteers only ever see check-in (the API enforces this too). */
@@ -75,22 +79,20 @@ function ThemeToggle() {
   );
 }
 
-function Brand() {
+function Brand({ compact }: { compact?: boolean }) {
+  if (compact) return <Logo className="h-8" />;
   return (
-    <div className="flex items-center gap-2.5 px-2">
-      <span className="flex size-8 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm">
-        <Church className="size-[18px]" aria-hidden />
-      </span>
-      <span className="leading-tight">
-        <span className="block text-sm font-semibold text-zinc-900 dark:text-white">FBC Enumclaw</span>
-        <span className="block text-xs text-zinc-500">Church Management</span>
-      </span>
+    <div className="px-2">
+      <Logo className="h-10" />
+      <span className="mt-1.5 block text-[11px] font-semibold tracking-[0.12em] text-zinc-500 uppercase">Church Management</span>
     </div>
   );
 }
 
 function SidebarContent({ onNavigate, onSearch }: { onNavigate?: () => void; onSearch: () => void }) {
   const { data: me } = useMe();
+  const isStaff = me?.role === "admin" || me?.role === "staff";
+  const pending = useAppAccounts("pending", isStaff).data?.pendingCount ?? 0;
   const logout = useLogout();
   const navigate = useNavigate();
   const toast = useToast();
@@ -127,6 +129,11 @@ function SidebarContent({ onNavigate, onSearch }: { onNavigate?: () => void; onS
               <>
                 <Icon className={clsx("size-[18px]", isActive ? "text-brand-600 dark:text-brand-400" : "text-zinc-400")} aria-hidden />
                 {label}
+                {to === "/app-accounts" && pending > 0 && (
+                  <span className="ml-auto rounded-full bg-brand-600 px-1.5 text-[11px] font-semibold text-white tabular-nums" aria-label={`${pending} waiting for review`}>
+                    {pending}
+                  </span>
+                )}
               </>
             )}
           </NavLink>
@@ -193,6 +200,11 @@ export function AppLayout() {
   if (isLoading) return <div className="min-h-screen" aria-busy="true" />;
   if (!me) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   if (me.sessionKind === "kiosk") return <Navigate to="/kiosk" replace />;
+  if (me.role === "member") {
+    // Church members use the member app, not the staff site.
+    window.location.replace("/app");
+    return null;
+  }
   if (me.role === "volunteer" && !VOLUNTEER_PATHS.some((p) => location.pathname.startsWith(p))) {
     return <Navigate to="/checkin" replace />;
   }
@@ -213,7 +225,7 @@ export function AppLayout() {
         <IconButton label="Open menu" onClick={() => setDrawerOpen(true)}>
           <Menu className="size-5" />
         </IconButton>
-        <Brand />
+        <Brand compact />
         {me.role !== "volunteer" ? (
           <IconButton label="Search" onClick={openSearch}>
             <Search className="size-5" />
@@ -246,12 +258,13 @@ export function AppLayout() {
 
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-50 to-zinc-50 px-4 py-12 dark:from-zinc-900 dark:to-zinc-950">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 flex justify-center">
-          <Brand />
-        </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-12">
+      <ColorBlocks className="absolute inset-x-0 top-0 h-[42vh]" />
+      <div className="relative w-full max-w-sm">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mb-6 flex justify-center">
+            <Logo variant="primary" className="h-20" />
+          </div>
           <h1 className="text-lg font-semibold">{title}</h1>
           {subtitle && <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>}
           <div className="mt-5">{children}</div>

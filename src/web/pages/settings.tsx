@@ -1,11 +1,15 @@
-import { ArrowUpRight, KeyRound, Plus, Shield, Trash2 } from "lucide-react";
+import { ArrowUpRight, KeyRound, Plus, Shield, Smartphone, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { USER_ROLE_LABELS, USER_ROLES, type UserRole } from "@shared/constants";
-import { Badge, Button, Card, CardHeader, Field, IconButton, Input, Modal, PageHeader, Select, useConfirm, useToast } from "../components/ui";
+import { STAFF_ROLES, USER_ROLE_LABELS, type UserRole } from "@shared/constants";
+import { Badge, Button, Card, CardHeader, Checkbox, Field, IconButton, Input, Modal, PageHeader, PersonPicker, Select, useConfirm, useToast } from "../components/ui";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, errorMessage } from "../lib/api";
 import { useForm } from "../lib/form";
 import { formatDay } from "../lib/format";
-import { useCreateUser, useDeleteUser, useMe, useUpdateUser, useUsers, type User } from "../lib/queries";
+import { useAppAccountActions, useCreateUser, useDeleteUser, useMe, useMembers, useUpdateUser, useUsers, type User } from "../lib/queries";
+import { Link } from "react-router";
+import type { PersonRef } from "@shared/schemas";
+import { fullName } from "../lib/format";
 
 function ChangePassword() {
   const toast = useToast();
@@ -89,7 +93,7 @@ function NewUserDialog({ open, onClose }: { open: boolean; onClose: () => void }
           }
         >
           <Select id="role" value={form.values.role} onChange={(e) => form.set("role", e.target.value as UserRole)}>
-            {USER_ROLES.map((r) => (
+            {STAFF_ROLES.map((r) => (
               <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>
             ))}
           </Select>
@@ -102,6 +106,47 @@ function NewUserDialog({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
+/** Connects a staff login to its person in the directory, so it can use the member app too. */
+function LinkPersonDialog({ user, people, onClose }: { user: User; people: PersonRef[]; onClose: () => void }) {
+  const { link } = useAppAccountActions();
+  const toast = useToast();
+  const [memberId, setMemberId] = useState<number | null>(user.memberId);
+  const save = (id: number | null) =>
+    link.mutate(
+      { id: user.id, memberId: id },
+      {
+        onSuccess: () => {
+          toast(id ? "Linked — they can now use the member app" : "Unlinked");
+          onClose();
+        },
+        onError: (e) => toast(errorMessage(e), "error"),
+      },
+    );
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Who is ${user.name ?? user.email}?`}
+      description="Linking a staff login to their entry in the directory lets them use the member app (directory, sermons, group chat) with the same sign-in."
+      footer={
+        <>
+          {user.memberId && (
+            <Button variant="ghost" className="mr-auto" loading={link.isPending} onClick={() => save(null)}>
+              Unlink
+            </Button>
+          )}
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="primary" disabled={!memberId || memberId === user.memberId} loading={link.isPending} onClick={() => save(memberId)}>
+            Link
+          </Button>
+        </>
+      }
+    >
+      <PersonPicker people={people} value={memberId} onChange={setMemberId} autoFocus />
+    </Modal>
+  );
+}
+
 function StaffAccounts({ me }: { me: User }) {
   const { data: users = [] } = useUsers(true);
   const update = useUpdateUser();
@@ -109,6 +154,9 @@ function StaffAccounts({ me }: { me: User }) {
   const confirm = useConfirm();
   const toast = useToast();
   const [adding, setAdding] = useState(false);
+  const [linking, setLinking] = useState<User | null>(null);
+  const { data: people } = useMembers();
+  const peopleById = new Map((people ?? []).map((p) => [p.id, p]));
   return (
     <Card>
       <CardHeader
@@ -124,7 +172,23 @@ function StaffAccounts({ me }: { me: User }) {
                 {u.name ?? u.email} {u.id === me.id && <Badge className="ml-1">You</Badge>}
               </p>
               <p className="truncate text-xs text-zinc-500">{u.name ? `${u.email} · ` : ""}added {formatDay(u.createdAt.slice(0, 10))}</p>
+              <p className="mt-0.5 flex items-center gap-1 text-xs text-zinc-500">
+                <Smartphone className="size-3.5" aria-hidden />
+                {u.memberId && peopleById.get(u.memberId) ? (
+                  <>
+                    Member app as{" "}
+                    <Link to={`/people/${u.memberId}`} className="font-medium text-zinc-700 hover:underline dark:text-zinc-300">
+                      {fullName(peopleById.get(u.memberId)!)}
+                    </Link>
+                  </>
+                ) : (
+                  "Not linked to a person — can't use the member app"
+                )}
+              </p>
             </div>
+            <Button size="sm" variant="ghost" onClick={() => setLinking(u)}>
+              {u.memberId ? "Change person" : "Link to person"}
+            </Button>
             <div className="w-44">
               <Select
                 aria-label={`Role for ${u.email}`}
@@ -138,7 +202,7 @@ function StaffAccounts({ me }: { me: User }) {
                 }
                 className="h-8"
               >
-                {USER_ROLES.map((r) => (
+                {STAFF_ROLES.map((r) => (
                   <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>
                 ))}
               </Select>
@@ -159,6 +223,42 @@ function StaffAccounts({ me }: { me: User }) {
         ))}
       </ul>
       {adding && <NewUserDialog open onClose={() => setAdding(false)} />}
+      {linking && (
+        <LinkPersonDialog
+          user={linking}
+          people={(people ?? []).filter((p) => !p.isChild)}
+          onClose={() => setLinking(null)}
+        />
+      )}
+    </Card>
+  );
+}
+
+function UsagePrivacy() {
+  const { data: me } = useMe();
+  const qc = useQueryClient();
+  const toast = useToast();
+  const save = useMutation({
+    mutationFn: (usageOptOut: boolean) => api.patch("/auth/me", { usageOptOut }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["me"] });
+      toast("Saved");
+    },
+    onError: (e) => toast(errorMessage(e), "error"),
+  });
+  if (!me) return null;
+  return (
+    <Card>
+      <CardHeader title="Privacy" />
+      <div className="px-5 py-4">
+        <Checkbox
+          label="Share anonymous usage statistics"
+          description="Counts like “how many people used the app this week”. We never record who did what. Turning this off also removes your activity for the current day, week and month."
+          checked={!me.usageOptOut}
+          disabled={save.isPending}
+          onChange={(e) => save.mutate(!e.target.checked)}
+        />
+      </div>
     </Card>
   );
 }
@@ -171,6 +271,7 @@ export function SettingsPage() {
       <PageHeader title="Settings" description={`Signed in as ${me.email}`} />
       <div className="space-y-6">
         <ChangePassword />
+        <UsagePrivacy />
         {me.role === "admin" ? (
           <StaffAccounts me={me} />
         ) : (

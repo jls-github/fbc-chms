@@ -1,5 +1,6 @@
 import { createRoute } from "@hono/zod-openapi";
-import { and, count, eq, ne, sql } from "drizzle-orm";
+import { and, count, eq, inArray, ne, sql } from "drizzle-orm";
+import { STAFF_ROLES } from "@shared/constants";
 import { z } from "zod";
 import { IdParam, User, UserInput, UserPatch } from "@shared/schemas";
 import { hashPassword } from "../auth/crypto";
@@ -36,7 +37,8 @@ userRoutes
       responses: { 200: jsonContent(z.object({ users: z.array(User) })), ...authErrors },
     }),
     async (c) => {
-      const rows = await c.var.deps.db.select().from(users).orderBy(users.email);
+      // Member-app accounts are managed on the App accounts screen, not here.
+      const rows = await c.var.deps.db.select().from(users).where(inArray(users.role, [...STAFF_ROLES])).orderBy(users.email);
       return c.json({ users: rows.map(serializeUser) }, 200);
     },
   )
@@ -86,9 +88,11 @@ userRoutes
       const input = c.req.valid("json");
       const { db } = c.var.deps;
       if (input.role && input.role !== "admin") await assertAnotherAdmin(db, id);
+      // Only staff accounts are managed here; a member-app account can't be promoted to staff.
+      const staffOnly = and(eq(users.id, id), inArray(users.role, [...STAFF_ROLES]));
       const [user] = Object.keys(input).length
-        ? await db.update(users).set(input).where(eq(users.id, id)).returning()
-        : await db.select().from(users).where(eq(users.id, id));
+        ? await db.update(users).set(input).where(staffOnly).returning()
+        : await db.select().from(users).where(staffOnly);
       if (!user) throw notFound("User");
       return c.json({ user: serializeUser(user) }, 200);
     },
@@ -107,7 +111,10 @@ userRoutes
       const { id } = c.req.valid("param");
       if (id === c.var.user.id) throw new ApiError(422, "You can't delete your own account.");
       const { db } = c.var.deps;
-      const deleted = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+      const deleted = await db
+        .delete(users)
+        .where(and(eq(users.id, id), inArray(users.role, [...STAFF_ROLES])))
+        .returning({ id: users.id });
       if (deleted.length === 0) throw notFound("User");
       return c.body(null, 204);
     },

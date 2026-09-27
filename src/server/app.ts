@@ -30,6 +30,7 @@ import { inBackground, mayTrack, platformFor, recordActive } from "./lib/usage";
 import { chatRoutes } from "./routes/chats";
 import { memberAppRoutes, publicMemberAppRoutes } from "./routes/member-app";
 import { userRoutes } from "./routes/users";
+import { privacyPage } from "./pages/privacy";
 
 export const API_VERSION = "v1";
 
@@ -181,6 +182,12 @@ export function createApp(deps: AppDeps, opts: { staticDir?: string; memberAppDi
   app.get("/up", async (c) => {
     await deps.db.execute(sql`select 1`);
     return c.text("ok");
+  });
+
+  // Public privacy policy (the URL given to the app stores and Meta). Plain HTML so crawlers can read it.
+  app.get("/privacy", (c) => {
+    c.header("Cache-Control", "public, max-age=3600");
+    return c.html(privacyPage);
   });
 
   const api = buildApi();

@@ -12,6 +12,6 @@ export default defineConfig({
   build: { outDir: "../../dist/web", emptyOutDir: true },
   server: {
     port: 5173,
-    proxy: { "/api": "http://localhost:3000", "/up": "http://localhost:3000" },
+    proxy: { "/api": "http://localhost:3000", "/up": "http://localhost:3000", "/privacy": "http://localhost:3000" },
   },
 });

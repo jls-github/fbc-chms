@@ -341,6 +341,31 @@ export const usageActiveTotals = pgTable(
   (t) => [primaryKey({ columns: [t.period, t.periodStart, t.platform] })],
 );
 
+// ---------------------------------------------------------------------------
+// Facebook sermon posts (see src/server/lib/facebook.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * One row per week: the Sunday's sermon posted (or not) to the church's
+ * Facebook Page. The unique Sunday is what stops a week being posted twice.
+ */
+export const facebookPosts = pgTable("facebook_posts", {
+  id: serial("id").primaryKey(),
+  sunday: date("sunday").notNull().unique(),
+  status: text("status", { enum: ["posting", "posted", "failed", "skipped", "missing"] }).notNull(),
+  sermonId: text("sermon_id"),
+  sermonTitle: text("sermon_title"),
+  message: text("message"),
+  link: text("link"),
+  facebookPostId: text("facebook_post_id"),
+  error: text("error"),
+  attempts: integer("attempts").notNull().default(0),
+  /** Who posted or skipped it by hand; null when the weekly job did it. */
+  byUserId: integer("by_user_id").references(() => users.id, { onDelete: "set null" }),
+  postedAt: timestamp("posted_at", { withTimezone: true }),
+  ...timestamps,
+});
+
 /** Small key/value store for server-generated settings (e.g. the URL-signing secret). */
 export const appSettings = pgTable("app_settings", {
   key: text("key").primaryKey(),

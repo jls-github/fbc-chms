@@ -779,3 +779,66 @@ export const UsageReport = z
   })
   .meta({ id: "UsageReport" });
 export type UsageReport = z.infer<typeof UsageReport>;
+
+// ---------------------------------------------------------------------------
+// Facebook sermon posts
+// ---------------------------------------------------------------------------
+
+export const FacebookPost = z
+  .object({
+    id: z.number(),
+    /** The Sunday the sermon was preached (YYYY-MM-DD); one post per Sunday. */
+    sunday: z.string(),
+    status: z.enum(["posting", "posted", "failed", "skipped", "missing"]),
+    sermonId: z.string().nullable(),
+    sermonTitle: z.string().nullable(),
+    message: z.string().nullable(),
+    link: z.string().nullable(),
+    /** Link to the post on Facebook, once posted. */
+    facebookUrl: z.string().nullable(),
+    error: z.string().nullable(),
+    attempts: z.number(),
+    /** Who posted or skipped it by hand; null when the weekly job did it. */
+    byName: z.string().nullable(),
+    postedAt: z.string().nullable(),
+    updatedAt: z.string(),
+  })
+  .meta({ id: "FacebookPost" });
+export type FacebookPost = z.infer<typeof FacebookPost>;
+
+export const FacebookStatus = z
+  .object({
+    /** Whether FACEBOOK_PAGE_ID and FACEBOOK_PAGE_TOKEN are set on the server. */
+    configured: z.boolean(),
+    page: z.object({ id: z.string(), name: z.string(), link: z.string().nullable() }).nullable(),
+    /** What Facebook said when the Page couldn't be reached with the token. */
+    pageError: z.string().nullable(),
+    /** When Facebook's data access for the token ends; reconnect before then. */
+    dataAccessExpiresAt: z.string().nullable(),
+    autoPost: z.boolean(),
+    template: z.string(),
+    defaultTemplate: z.string(),
+    templateFields: z.array(z.string()),
+    /** e.g. "Mondays, 8am–noon (America/Los_Angeles)". */
+    schedule: z.string(),
+    thisWeek: z.object({
+      sunday: z.string(),
+      sermon: Sermon.nullable(),
+      /** The message as it would be posted, with the current template. */
+      preview: z.string().nullable(),
+      post: FacebookPost.nullable(),
+    }),
+    history: z.array(FacebookPost),
+  })
+  .meta({ id: "FacebookStatus" });
+export type FacebookStatus = z.infer<typeof FacebookStatus>;
+
+export const FacebookSettingsInput = z
+  .object({
+    autoPost: z.boolean().optional(),
+    /** Blank resets to the default. */
+    template: z.string().max(2000).nullish(),
+  })
+  .meta({ id: "FacebookSettingsInput" });
+
+export const FacebookSkipInput = z.object({ skip: z.boolean() }).meta({ id: "FacebookSkipInput" });

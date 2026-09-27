@@ -37,6 +37,9 @@ env:
     CHURCH_TIMEZONE: America/Los_Angeles
   secret:
     - DATABASE_URL
+    # Monday sermon posts to the church's Facebook Page (docs/DEPLOYING.md).
+    - FACEBOOK_PAGE_ID
+    - FACEBOOK_PAGE_TOKEN
 
 # The Rails app's SQLite files, mounted READ-ONLY so `import-rails` can copy
 # them into Postgres. The originals are never modified, which keeps a rollback

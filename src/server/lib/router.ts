@@ -1,5 +1,6 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import type { Db } from "../db/client";
+import type { FacebookClient } from "./facebook";
 import type { Mailer } from "./mailer";
 import type { SessionKind, UserRole, UserStatus } from "@shared/constants";
 import type { Sermon } from "@shared/schemas";
@@ -9,6 +10,8 @@ export type AppDeps = {
   mailer: Mailer;
   /** Where recent sermons come from (the church website by default; tests pass a fake). */
   scrapeSermons?: () => Promise<Sermon[]>;
+  /** The church's Facebook Page, when FACEBOOK_PAGE_ID / FACEBOOK_PAGE_TOKEN are set (tests pass a fake). */
+  facebook?: FacebookClient;
 };
 
 export type AuthUser = {

@@ -10,6 +10,7 @@ import { useAppAccountActions, useCreateUser, useDeleteUser, useMe, useMembers, 
 import { Link } from "react-router";
 import type { PersonRef } from "@shared/schemas";
 import { fullName } from "../lib/format";
+import { FacebookPosts } from "./settings-facebook";
 
 function ChangePassword() {
   const toast = useToast();
@@ -272,6 +273,7 @@ export function SettingsPage() {
       <div className="space-y-6">
         <ChangePassword />
         <UsagePrivacy />
+        {me.role === "admin" && <FacebookPosts />}
         {me.role === "admin" ? (
           <StaffAccounts me={me} />
         ) : (

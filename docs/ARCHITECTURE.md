@@ -101,3 +101,11 @@ chat is open), unread counts, and author-only deletion.
 **Next:** push notifications for new messages (device-token registration plus
 APNs/FCM via Expo push), and email/SMS verification so self-sign-ups that match
 a verified email or phone can be linked without staff review.
+
+### Facebook sermon posts (built)
+
+`lib/facebook.ts` posts Sunday's sermon to the church's Facebook Page on Monday
+morning, from a 15-minute timer in `index.ts` (the app runs as one container,
+so an in-process timer is enough). One `facebook_posts` row per Sunday, claimed
+before calling Facebook, means a week is never posted twice even if two runs
+overlap. Admins manage it under Settings → Facebook; setup is in docs/DEPLOYING.md.

@@ -69,6 +69,44 @@ Password-reset emails need SMTP. Set `SMTP_URL` (e.g.
 reset link is written to the app log (`kamal logs`). Admins can also add staff
 accounts from Settings, or run `kamal cli create-user`.
 
+## Facebook sermon posts
+
+Every Monday between 8am and noon (church time) the app posts Sunday's sermon
+from fbcenumclaw.com to the church's Facebook Page as a link post, once. If the
+sermon isn't on the website by noon, or Facebook rejects the post three times,
+admins are emailed (which needs SMTP, above). Admins turn it on, edit the
+message, preview the week's post, **Post now** or **Skip** under
+**Settings → Facebook**. The code is in `src/server/lib/facebook.ts`.
+
+It needs two secrets, read from `~/.config/fbc-chms/facebook.env` (chmod 600) by
+`.kamal/secrets`:
+
+```
+FACEBOOK_PAGE_ID=356684410870543
+FACEBOOK_PAGE_TOKEN=<Page access token>
+```
+
+Leave them out and posting is off. To get or renew the Page token (a Page
+admin with full control does this):
+
+1. In the [Graph API Explorer](https://developers.facebook.com/tools/explorer),
+   pick the Meta app and **Get User Access Token** with `pages_show_list`,
+   `pages_read_engagement` and `pages_manage_posts`. Allow only the FBC Enumclaw Page.
+2. Swap it for a long-lived user token (keep the app secret out of shared places):
+   `curl "https://graph.facebook.com/v25.0/oauth/access_token?grant_type=fb_exchange_token&client_id=APP_ID&client_secret=APP_SECRET&fb_exchange_token=SHORT_TOKEN"`
+3. Ask for the Page's own token. It doesn't expire. Our access comes through the
+   church's Meta Business portfolio, so `/me/accounts` comes back empty; ask for
+   the Page by ID instead:
+   `curl "https://graph.facebook.com/v25.0/356684410870543?fields=name,access_token&access_token=LONG_USER_TOKEN"`
+4. Put it in `facebook.env` and run `kamal deploy` (or `kamal env push` then
+   `kamal app boot`).
+
+Facebook also sets a *data access* date on the token (about 90 days out,
+renewed when a Page admin reconnects the app). Settings shows it, and admins
+are emailed two weeks before it passes; renew by repeating the steps above.
+Posts from a Meta app in Development mode are only visible to Page admins and
+the app's developers, so the app must be **Live** for the public to see them.
+
 ## Cutover log
 
 Completed 2026-09-25. Before the cutover, a SQLite `.backup` of the Rails

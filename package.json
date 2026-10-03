@@ -47,7 +47,7 @@
     "concurrently": "^10.0.5",
     "drizzle-kit": "^0.31.11",
     "esbuild": "^0.28.2",
-    "lucide-react": "^1.48.0",
+    "lucide-react": "^1.49.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "^7.18.4",
